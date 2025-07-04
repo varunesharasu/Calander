@@ -1,35 +1,24 @@
 "use client"
 
-import { Clock, Calendar, Sun, Plus } from "lucide-react"
+import { Clock, Calendar, Sun, Plus, TrendingUp } from "lucide-react"
 import { useEvents } from "../context/EventContext"
+import { getDayOfYear, getWeekNumber, getQuarter, formatDate, getRelativeTime } from "../utils/dateUtils"
+import dayjs from "dayjs"
 
 const DateInfo = ({ selectedDate, onAddEvent }) => {
   const { getEventsForDate } = useEvents()
 
   if (!selectedDate) return null
 
-  const formatDate = (date) => {
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    })
-  }
-
-  const getDateDetails = (date) => {
-    const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24)
-    const weekNumber = Math.ceil(dayOfYear / 7)
-
-    return {
-      dayOfYear,
-      weekNumber,
-      quarter: Math.ceil((date.getMonth() + 1) / 3),
-    }
-  }
-
-  const details = getDateDetails(selectedDate)
+  const dayOfYear = getDayOfYear(selectedDate)
+  const weekNumber = getWeekNumber(selectedDate)
+  const quarter = getQuarter(selectedDate)
   const eventsCount = getEventsForDate(selectedDate).length
+  const isToday = dayjs(selectedDate).isSame(dayjs(), "day")
+  const relativeTime = getRelativeTime(selectedDate)
+
+  // Calculate progress through the year
+  const yearProgress = (dayOfYear / (dayjs(selectedDate).isLeapYear() ? 366 : 365)) * 100
 
   return (
     <div className="glass-card rounded-2xl p-6 bounce-in">
@@ -48,21 +37,24 @@ const DateInfo = ({ selectedDate, onAddEvent }) => {
       </div>
 
       <div className="space-y-4">
+        {/* Main Date Display */}
         <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100/50">
           <div className="flex items-center mb-2">
             <Calendar className="w-4 h-4 text-blue-600 mr-2" />
-            <span className="text-sm font-medium text-blue-800">Full Date</span>
+            <span className="text-sm font-medium text-blue-800">{isToday ? "Today" : "Selected Date"}</span>
           </div>
-          <p className="text-slate-700 font-semibold">{formatDate(selectedDate)}</p>
+          <p className="text-slate-700 font-semibold">{formatDate(selectedDate, "dddd, MMMM D, YYYY")}</p>
+          {!isToday && <p className="text-sm text-slate-500 mt-1">{relativeTime}</p>}
         </div>
 
+        {/* Date Statistics Grid */}
         <div className="grid grid-cols-2 gap-3">
           <div className="p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-100/50">
             <div className="flex items-center mb-1">
               <Sun className="w-3 h-3 text-emerald-600 mr-1" />
               <span className="text-xs font-medium text-emerald-800">Day of Year</span>
             </div>
-            <p className="text-sm font-bold text-emerald-700">{details.dayOfYear}</p>
+            <p className="text-sm font-bold text-emerald-700">{dayOfYear}</p>
           </div>
 
           <div className="p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100/50">
@@ -70,7 +62,7 @@ const DateInfo = ({ selectedDate, onAddEvent }) => {
               <Clock className="w-3 h-3 text-purple-600 mr-1" />
               <span className="text-xs font-medium text-purple-800">Week #</span>
             </div>
-            <p className="text-sm font-bold text-purple-700">{details.weekNumber}</p>
+            <p className="text-sm font-bold text-purple-700">{weekNumber}</p>
           </div>
         </div>
 
@@ -78,7 +70,7 @@ const DateInfo = ({ selectedDate, onAddEvent }) => {
           <div className="p-3 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border border-orange-100/50">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-orange-800">Quarter</span>
-              <span className="text-sm font-bold text-orange-700">Q{details.quarter}</span>
+              <span className="text-sm font-bold text-orange-700">Q{quarter}</span>
             </div>
           </div>
 
@@ -86,6 +78,44 @@ const DateInfo = ({ selectedDate, onAddEvent }) => {
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-cyan-800">Events</span>
               <span className="text-sm font-bold text-cyan-700">{eventsCount}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Year Progress */}
+        <div className="p-3 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-100/50">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center">
+              <TrendingUp className="w-3 h-3 text-indigo-600 mr-1" />
+              <span className="text-sm font-medium text-indigo-800">Year Progress</span>
+            </div>
+            <span className="text-sm font-bold text-indigo-700">{Math.round(yearProgress)}%</span>
+          </div>
+          <div className="w-full bg-indigo-200 rounded-full h-2">
+            <div
+              className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${yearProgress}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Day Type Indicator */}
+        <div className="p-3 bg-gradient-to-r from-slate-50 to-gray-50 rounded-lg border border-slate-100/50">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-800">Day Type</span>
+            <div className="flex items-center space-x-2">
+              {dayjs(selectedDate).day() === 0 || dayjs(selectedDate).day() === 6 ? (
+                <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
+                  Weekend
+                </span>
+              ) : (
+                <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">Weekday</span>
+              )}
+              {isToday && (
+                <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+                  Today
+                </span>
+              )}
             </div>
           </div>
         </div>
