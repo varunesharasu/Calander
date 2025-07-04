@@ -75,7 +75,7 @@ export const EventProvider = ({ children }) => {
       filtered = filtered.filter(
         (event) =>
           event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          event.description.toLowerCase().includes(searchTerm.toLowerCase()),
+          (event.description && event.description.toLowerCase().includes(searchTerm.toLowerCase())),
       )
     }
 

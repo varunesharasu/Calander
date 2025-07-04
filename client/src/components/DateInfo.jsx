@@ -3,7 +3,6 @@
 import { Clock, Calendar, Sun, Plus, TrendingUp } from "lucide-react"
 import { useEvents } from "../context/EventContext"
 import { getDayOfYear, getWeekNumber, getQuarter, formatDate, getRelativeTime } from "../utils/dateUtils"
-import dayjs from "dayjs"
 
 const DateInfo = ({ selectedDate, onAddEvent }) => {
   const { getEventsForDate } = useEvents()
@@ -14,11 +13,11 @@ const DateInfo = ({ selectedDate, onAddEvent }) => {
   const weekNumber = getWeekNumber(selectedDate)
   const quarter = getQuarter(selectedDate)
   const eventsCount = getEventsForDate(selectedDate).length
-  const isToday = dayjs(selectedDate).isSame(dayjs(), "day")
+  const isToday = selectedDate.toDateString() === new Date().toDateString()
   const relativeTime = getRelativeTime(selectedDate)
 
   // Calculate progress through the year
-  const yearProgress = (dayOfYear / (dayjs(selectedDate).isLeapYear() ? 366 : 365)) * 100
+  const yearProgress = (dayOfYear / 365) * 100
 
   return (
     <div className="glass-card rounded-2xl p-6 bounce-in">
@@ -43,7 +42,7 @@ const DateInfo = ({ selectedDate, onAddEvent }) => {
             <Calendar className="w-4 h-4 text-blue-600 mr-2" />
             <span className="text-sm font-medium text-blue-800">{isToday ? "Today" : "Selected Date"}</span>
           </div>
-          <p className="text-slate-700 font-semibold">{formatDate(selectedDate, "dddd, MMMM D, YYYY")}</p>
+          <p className="text-slate-700 font-semibold">{formatDate(selectedDate)}</p>
           {!isToday && <p className="text-sm text-slate-500 mt-1">{relativeTime}</p>}
         </div>
 
@@ -104,7 +103,7 @@ const DateInfo = ({ selectedDate, onAddEvent }) => {
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-slate-800">Day Type</span>
             <div className="flex items-center space-x-2">
-              {dayjs(selectedDate).day() === 0 || dayjs(selectedDate).day() === 6 ? (
+              {selectedDate.getDay() === 0 || selectedDate.getDay() === 6 ? (
                 <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
                   Weekend
                 </span>

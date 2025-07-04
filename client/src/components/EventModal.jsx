@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, Calendar, Clock, Tag, FileText, Bell, Repeat } from "lucide-react"
+import { X, Calendar, Clock, Tag, FileText, Bell, Repeat, MapPin, Users } from "lucide-react"
 import { useEvents } from "../context/EventContext"
+import { getTimeSlots } from "../utils/dateUtils"
 
 const EventModal = ({ isOpen, onClose, selectedDate, editingEvent }) => {
   const { addEvent, updateEvent } = useEvents()
@@ -12,11 +13,14 @@ const EventModal = ({ isOpen, onClose, selectedDate, editingEvent }) => {
     description: "",
     date: selectedDate,
     time: "09:00",
+    endTime: "10:00",
     category: "personal",
     priority: "medium",
     reminder: "15",
     recurring: "none",
     location: "",
+    attendees: "",
+    allDay: false,
   })
 
   const [errors, setErrors] = useState({})
@@ -24,16 +28,23 @@ const EventModal = ({ isOpen, onClose, selectedDate, editingEvent }) => {
   useEffect(() => {
     if (editingEvent) {
       const eventDate = new Date(editingEvent.date)
+      const endDate = editingEvent.endDate
+        ? new Date(editingEvent.endDate)
+        : new Date(eventDate.getTime() + 60 * 60 * 1000)
+
       setFormData({
         title: editingEvent.title || "",
         description: editingEvent.description || "",
         date: eventDate,
         time: eventDate.toTimeString().slice(0, 5),
+        endTime: endDate.toTimeString().slice(0, 5),
         category: editingEvent.category || "personal",
         priority: editingEvent.priority || "medium",
         reminder: editingEvent.reminder || "15",
         recurring: editingEvent.recurring || "none",
         location: editingEvent.location || "",
+        attendees: editingEvent.attendees || "",
+        allDay: editingEvent.allDay || false,
       })
     } else {
       setFormData((prev) => ({
@@ -44,19 +55,21 @@ const EventModal = ({ isOpen, onClose, selectedDate, editingEvent }) => {
   }, [editingEvent, selectedDate])
 
   const categories = [
-    { value: "personal", label: "Personal", color: "bg-blue-500" },
-    { value: "work", label: "Work", color: "bg-green-500" },
-    { value: "health", label: "Health", color: "bg-red-500" },
-    { value: "social", label: "Social", color: "bg-purple-500" },
-    { value: "travel", label: "Travel", color: "bg-orange-500" },
-    { value: "education", label: "Education", color: "bg-indigo-500" },
+    { value: "personal", label: "Personal", color: "bg-blue-500", emoji: "👤" },
+    { value: "work", label: "Work", color: "bg-green-500", emoji: "💼" },
+    { value: "health", label: "Health", color: "bg-red-500", emoji: "🏥" },
+    { value: "social", label: "Social", color: "bg-purple-500", emoji: "👥" },
+    { value: "travel", label: "Travel", color: "bg-orange-500", emoji: "✈️" },
+    { value: "education", label: "Education", color: "bg-indigo-500", emoji: "📚" },
   ]
 
   const priorities = [
-    { value: "low", label: "Low", color: "text-green-600" },
-    { value: "medium", label: "Medium", color: "text-yellow-600" },
-    { value: "high", label: "High", color: "text-red-600" },
+    { value: "low", label: "Low", color: "text-green-600", emoji: "🟢" },
+    { value: "medium", label: "Medium", color: "text-yellow-600", emoji: "🟡" },
+    { value: "high", label: "High", color: "text-red-600", emoji: "🔴" },
   ]
+
+  const timeSlots = getTimeSlots()
 
   const validateForm = () => {
     const newErrors = {}
@@ -69,6 +82,10 @@ const EventModal = ({ isOpen, onClose, selectedDate, editingEvent }) => {
       newErrors.date = "Date is required"
     }
 
+    if (!formData.allDay && formData.time >= formData.endTime) {
+      newErrors.endTime = "End time must be after start time"
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -78,13 +95,29 @@ const EventModal = ({ isOpen, onClose, selectedDate, editingEvent }) => {
 
     if (!validateForm()) return
 
-    const eventDateTime = new Date(formData.date)
-    const [hours, minutes] = formData.time.split(":")
-    eventDateTime.setHours(Number.parseInt(hours), Number.parseInt(minutes))
+    let eventDateTime, endDateTime
+
+    if (formData.allDay) {
+      eventDateTime = new Date(formData.date)
+      eventDateTime.setHours(0, 0, 0, 0)
+      endDateTime = new Date(formData.date)
+      endDateTime.setHours(23, 59, 59, 999)
+    } else {
+      const [hours, minutes] = formData.time.split(":")
+      const [endHours, endMinutes] = formData.endTime.split(":")
+
+      eventDateTime = new Date(formData.date)
+      eventDateTime.setHours(Number.parseInt(hours), Number.parseInt(minutes), 0, 0)
+
+      endDateTime = new Date(formData.date)
+      endDateTime.setHours(Number.parseInt(endHours), Number.parseInt(endMinutes), 0, 0)
+    }
 
     const eventData = {
       ...formData,
       date: eventDateTime,
+      endDate: endDateTime,
+      duration: formData.allDay ? "All day" : Math.round((endDateTime - eventDateTime) / (1000 * 60)) + " min",
     }
 
     if (editingEvent) {
@@ -148,7 +181,7 @@ const EventModal = ({ isOpen, onClose, selectedDate, editingEvent }) => {
             />
           </div>
 
-          {/* Date and Time */}
+          {/* Date and All Day Toggle */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
@@ -165,18 +198,57 @@ const EventModal = ({ isOpen, onClose, selectedDate, editingEvent }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
-                <Clock className="w-4 h-4 mr-2" />
-                Time
-              </label>
-              <input
-                type="time"
-                value={formData.time}
-                onChange={(e) => handleChange("time", e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
-              />
+              <label className="block text-sm font-semibold text-slate-700 mb-2">All Day Event</label>
+              <div className="flex items-center h-12">
+                <input
+                  type="checkbox"
+                  checked={formData.allDay}
+                  onChange={(e) => handleChange("allDay", e.target.checked)}
+                  className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="ml-2 text-sm text-slate-600">This is an all-day event</span>
+              </div>
             </div>
           </div>
+
+          {/* Time Selection */}
+          {!formData.allDay && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
+                  <Clock className="w-4 h-4 mr-2" />
+                  Start Time
+                </label>
+                <select
+                  value={formData.time}
+                  onChange={(e) => handleChange("time", e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+                >
+                  {timeSlots.map((slot) => (
+                    <option key={slot.time} value={slot.time}>
+                      {slot.display}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">End Time</label>
+                <select
+                  value={formData.endTime}
+                  onChange={(e) => handleChange("endTime", e.target.value)}
+                  className={`w-full px-4 py-3 rounded-xl border ${errors.endTime ? "border-red-300" : "border-slate-200"} focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200`}
+                >
+                  {timeSlots.map((slot) => (
+                    <option key={slot.time} value={slot.time}>
+                      {slot.display}
+                    </option>
+                  ))}
+                </select>
+                {errors.endTime && <p className="text-red-500 text-sm mt-1">{errors.endTime}</p>}
+              </div>
+            </div>
+          )}
 
           {/* Category and Priority */}
           <div className="grid grid-cols-2 gap-4">
@@ -192,7 +264,7 @@ const EventModal = ({ isOpen, onClose, selectedDate, editingEvent }) => {
               >
                 {categories.map((cat) => (
                   <option key={cat.value} value={cat.value}>
-                    {cat.label}
+                    {cat.emoji} {cat.label}
                   </option>
                 ))}
               </select>
@@ -207,23 +279,42 @@ const EventModal = ({ isOpen, onClose, selectedDate, editingEvent }) => {
               >
                 {priorities.map((priority) => (
                   <option key={priority.value} value={priority.value}>
-                    {priority.label}
+                    {priority.emoji} {priority.label}
                   </option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Location */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Location</label>
-            <input
-              type="text"
-              value={formData.location}
-              onChange={(e) => handleChange("location", e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
-              placeholder="Enter location..."
-            />
+          {/* Location and Attendees */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
+                <MapPin className="w-4 h-4 mr-2" />
+                Location
+              </label>
+              <input
+                type="text"
+                value={formData.location}
+                onChange={(e) => handleChange("location", e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+                placeholder="Enter location..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
+                <Users className="w-4 h-4 mr-2" />
+                Attendees
+              </label>
+              <input
+                type="text"
+                value={formData.attendees}
+                onChange={(e) => handleChange("attendees", e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+                placeholder="Enter attendees..."
+              />
+            </div>
           </div>
 
           {/* Reminder and Recurring */}
