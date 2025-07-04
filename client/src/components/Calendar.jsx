@@ -1,6 +1,7 @@
 "use client"
-import { ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react"
+import { ChevronLeft, ChevronRight, CalendarIcon, Plus } from "lucide-react"
 import { useState } from "react"
+import { useEvents } from "../context/EventContext"
 import {
   getDaysInMonth,
   getFirstDayOfMonth,
@@ -11,8 +12,9 @@ import {
   subMonths,
 } from "../utils/dateUtils"
 
-const Calendar = ({ selectedDate, onDateSelect, currentDate, onCurrentDateChange }) => {
+const Calendar = ({ selectedDate, onDateSelect, currentDate, onCurrentDateChange, onAddEvent }) => {
   const [isTransitioning, setIsTransitioning] = useState(false)
+  const { getEventsForDate } = useEvents()
 
   const daysInMonth = getDaysInMonth(currentDate)
   const firstDayOfMonth = getFirstDayOfMonth(currentDate)
@@ -27,24 +29,28 @@ const Calendar = ({ selectedDate, onDateSelect, currentDate, onCurrentDateChange
   for (let i = firstDayOfMonth - 1; i >= 0; i--) {
     const day = daysInPrevMonth - i
     const date = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), day)
+    const dayEvents = getEventsForDate(date)
     calendarDays.push({
       date,
       day,
       isCurrentMonth: false,
       isToday: isToday(date),
       isSelected: selectedDate && isSameDay(date, selectedDate),
+      events: dayEvents,
     })
   }
 
   // Current month days
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+    const dayEvents = getEventsForDate(date)
     calendarDays.push({
       date,
       day,
       isCurrentMonth: true,
       isToday: isToday(date),
       isSelected: selectedDate && isSameDay(date, selectedDate),
+      events: dayEvents,
     })
   }
 
@@ -54,12 +60,14 @@ const Calendar = ({ selectedDate, onDateSelect, currentDate, onCurrentDateChange
 
   for (let day = 1; day <= remainingDays; day++) {
     const date = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), day)
+    const dayEvents = getEventsForDate(date)
     calendarDays.push({
       date,
       day,
       isCurrentMonth: false,
       isToday: isToday(date),
       isSelected: selectedDate && isSameDay(date, selectedDate),
+      events: dayEvents,
     })
   }
 
@@ -77,6 +85,18 @@ const Calendar = ({ selectedDate, onDateSelect, currentDate, onCurrentDateChange
 
   const handleDateClick = (date) => {
     onDateSelect(date)
+  }
+
+  const getCategoryColor = (category) => {
+    const colors = {
+      personal: "bg-blue-500",
+      work: "bg-green-500",
+      health: "bg-red-500",
+      social: "bg-purple-500",
+      travel: "bg-orange-500",
+      education: "bg-indigo-500",
+    }
+    return colors[category] || "bg-gray-500"
   }
 
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
@@ -130,9 +150,9 @@ const Calendar = ({ selectedDate, onDateSelect, currentDate, onCurrentDateChange
         className={`calendar-grid grid grid-cols-7 gap-2 ${isTransitioning ? "opacity-50 scale-98" : "opacity-100 scale-100"} transition-all duration-300`}
       >
         {calendarDays.map((calendarDay, index) => {
-          const { date, day, isCurrentMonth, isToday: isDayToday, isSelected } = calendarDay
+          const { date, day, isCurrentMonth, isToday: isDayToday, isSelected, events } = calendarDay
 
-          let dayClasses = "calendar-day"
+          let dayClasses = "calendar-day relative"
 
           if (isDayToday) {
             dayClasses += " today"
@@ -151,6 +171,25 @@ const Calendar = ({ selectedDate, onDateSelect, currentDate, onCurrentDateChange
               aria-label={`Select ${date.toLocaleDateString()}`}
             >
               <span className="relative z-10">{day}</span>
+
+              {/* Event indicators */}
+              {events.length > 0 && (
+                <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex space-x-1">
+                  {events.slice(0, 3).map((event, eventIndex) => (
+                    <div
+                      key={eventIndex}
+                      className={`w-1.5 h-1.5 rounded-full ${getCategoryColor(event.category)} opacity-80`}
+                      title={event.title}
+                    />
+                  ))}
+                  {events.length > 3 && (
+                    <div
+                      className="w-1.5 h-1.5 rounded-full bg-gray-400 opacity-80"
+                      title={`+${events.length - 3} more`}
+                    />
+                  )}
+                </div>
+              )}
             </button>
           )
         })}
@@ -170,9 +209,9 @@ const Calendar = ({ selectedDate, onDateSelect, currentDate, onCurrentDateChange
           Today
         </button>
 
-        <button className="btn-secondary">
-          <span className="mr-2">📊</span>
-          View Stats
+        <button onClick={onAddEvent} className="btn-primary">
+          <Plus className="w-4 h-4 mr-2" />
+          Add Event
         </button>
       </div>
     </div>

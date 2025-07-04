@@ -1,6 +1,11 @@
-import { Clock, Calendar, Sun } from "lucide-react"
+"use client"
 
-const DateInfo = ({ selectedDate }) => {
+import { Clock, Calendar, Sun, Plus } from "lucide-react"
+import { useEvents } from "../context/EventContext"
+
+const DateInfo = ({ selectedDate, onAddEvent }) => {
+  const { getEventsForDate } = useEvents()
+
   if (!selectedDate) return null
 
   const formatDate = (date) => {
@@ -24,13 +29,23 @@ const DateInfo = ({ selectedDate }) => {
   }
 
   const details = getDateDetails(selectedDate)
+  const eventsCount = getEventsForDate(selectedDate).length
 
   return (
     <div className="glass-card rounded-2xl p-6 bounce-in">
-      <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
-        <div className="w-2 h-2 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full mr-3"></div>
-        Selected Date
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-slate-800 flex items-center">
+          <div className="w-2 h-2 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full mr-3"></div>
+          Selected Date
+        </h3>
+        <button
+          onClick={onAddEvent}
+          className="p-2 hover:bg-emerald-100 rounded-lg transition-colors duration-200 group"
+          title="Add event for this date"
+        >
+          <Plus className="w-4 h-4 text-emerald-600 group-hover:text-emerald-700" />
+        </button>
+      </div>
 
       <div className="space-y-4">
         <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100/50">
@@ -59,10 +74,19 @@ const DateInfo = ({ selectedDate }) => {
           </div>
         </div>
 
-        <div className="p-3 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border border-orange-100/50">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-orange-800">Quarter</span>
-            <span className="text-sm font-bold text-orange-700">Q{details.quarter}</span>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="p-3 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg border border-orange-100/50">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-orange-800">Quarter</span>
+              <span className="text-sm font-bold text-orange-700">Q{details.quarter}</span>
+            </div>
+          </div>
+
+          <div className="p-3 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-lg border border-cyan-100/50">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-cyan-800">Events</span>
+              <span className="text-sm font-bold text-cyan-700">{eventsCount}</span>
+            </div>
           </div>
         </div>
       </div>

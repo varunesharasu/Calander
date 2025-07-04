@@ -1,6 +1,10 @@
-import { TrendingUp, Calendar, Clock, Target } from "lucide-react"
+import { Calendar, Target, CheckCircle, AlertCircle } from "lucide-react"
+import { useEvents } from "../context/EventContext"
 
 const Stats = ({ selectedDate, currentDate }) => {
+  const { getEventStats } = useEvents()
+  const eventStats = getEventStats()
+
   const today = new Date()
   const daysInCurrentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()
   const currentDay = today.getDate()
@@ -9,32 +13,32 @@ const Stats = ({ selectedDate, currentDate }) => {
   const stats = [
     {
       icon: Calendar,
-      label: "Days in Month",
-      value: daysInCurrentMonth,
+      label: "Total Events",
+      value: eventStats.total,
       color: "from-blue-500 to-indigo-600",
       bgColor: "from-blue-50 to-indigo-50",
       borderColor: "border-blue-200/50",
     },
     {
-      icon: Clock,
-      label: "Current Day",
-      value: currentDay,
+      icon: CheckCircle,
+      label: "This Month",
+      value: eventStats.thisMonth,
       color: "from-emerald-500 to-teal-600",
       bgColor: "from-emerald-50 to-teal-50",
       borderColor: "border-emerald-200/50",
     },
     {
-      icon: TrendingUp,
-      label: "Month Progress",
-      value: `${Math.round(monthProgress)}%`,
+      icon: AlertCircle,
+      label: "Upcoming",
+      value: eventStats.upcoming,
       color: "from-purple-500 to-pink-600",
       bgColor: "from-purple-50 to-pink-50",
       borderColor: "border-purple-200/50",
     },
     {
       icon: Target,
-      label: "Days Remaining",
-      value: daysInCurrentMonth - currentDay,
+      label: "Month Progress",
+      value: `${Math.round(monthProgress)}%`,
       color: "from-orange-500 to-red-600",
       bgColor: "from-orange-50 to-red-50",
       borderColor: "border-orange-200/50",
