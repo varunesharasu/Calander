@@ -1,126 +1,102 @@
-// Simple date utilities without dayjs for now
-export const getDaysInMonth = (date) => {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc"
+import timezone from "dayjs/plugin/timezone"
+import isSameOrBefore from "dayjs/plugin/isSameOrBefore"
+import isSameOrAfter from "dayjs/plugin/isSameOrAfter"
+import weekOfYear from "dayjs/plugin/weekOfYear"
+import relativeTime from "dayjs/plugin/relativeTime"
+import customParseFormat from "dayjs/plugin/customParseFormat"
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
+dayjs.extend(isSameOrBefore)
+dayjs.extend(isSameOrAfter)
+dayjs.extend(weekOfYear)
+dayjs.extend(relativeTime)
+dayjs.extend(customParseFormat)
+
+export const formatDate = (date, format = "YYYY-MM-DD") => {
+  return dayjs(date).format(format)
 }
 
-export const getFirstDayOfMonth = (date) => {
-  return new Date(date.getFullYear(), date.getMonth(), 1).getDay()
+export const formatTime = (date, format = "HH:mm") => {
+  return dayjs(date).format(format)
 }
 
-export const isSameDay = (date1, date2) => {
-  return (
-    date1.getDate() === date2.getDate() &&
-    date1.getMonth() === date2.getMonth() &&
-    date1.getFullYear() === date2.getFullYear()
-  )
+export const formatDateTime = (date, format = "YYYY-MM-DD HH:mm") => {
+  return dayjs(date).format(format)
 }
 
 export const isToday = (date) => {
-  const today = new Date()
-  return isSameDay(date, today)
+  return dayjs(date).isSame(dayjs(), "day")
 }
 
-export const formatMonthYear = (date) => {
-  return date.toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  })
+export const isSameDay = (date1, date2) => {
+  return dayjs(date1).isSame(dayjs(date2), "day")
+}
+
+export const addDays = (date, days) => {
+  return dayjs(date).add(days, "day").toDate()
+}
+
+export const addWeeks = (date, weeks) => {
+  return dayjs(date).add(weeks, "week").toDate()
 }
 
 export const addMonths = (date, months) => {
-  const newDate = new Date(date)
-  newDate.setMonth(newDate.getMonth() + months)
-  return newDate
+  return dayjs(date).add(months, "month").toDate()
 }
 
-export const subMonths = (date, months) => {
-  const newDate = new Date(date)
-  newDate.setMonth(newDate.getMonth() - months)
-  return newDate
+export const startOfMonth = (date) => {
+  return dayjs(date).startOf("month").toDate()
 }
 
-export const getWeekNumber = (date) => {
-  const firstDayOfYear = new Date(date.getFullYear(), 0, 1)
-  const pastDaysOfYear = (date - firstDayOfYear) / 86400000
-  return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7)
+export const endOfMonth = (date) => {
+  return dayjs(date).endOf("month").toDate()
 }
 
-export const getDayOfYear = (date) => {
-  const start = new Date(date.getFullYear(), 0, 0)
-  const diff = date - start
-  const oneDay = 1000 * 60 * 60 * 24
-  return Math.floor(diff / oneDay)
+export const startOfWeek = (date) => {
+  return dayjs(date).startOf("week").toDate()
 }
 
-export const getQuarter = (date) => {
-  return Math.ceil((date.getMonth() + 1) / 3)
+export const endOfWeek = (date) => {
+  return dayjs(date).endOf("week").toDate()
 }
 
-export const isLeapYear = (year) => {
-  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0
+export const getDaysInMonth = (date) => {
+  return dayjs(date).daysInMonth()
 }
 
-export const formatDate = (date, options = {}) => {
-  const defaultOptions = {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
+export const getWeekDays = (startDate) => {
+  const days = []
+  for (let i = 0; i < 7; i++) {
+    days.push(dayjs(startDate).add(i, "day").toDate())
   }
-  return date.toLocaleDateString("en-US", { ...defaultOptions, ...options })
+  return days
 }
 
-export const formatTime = (date) => {
-  return date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  })
-}
+export const getMonthCalendarDays = (date) => {
+  const start = dayjs(date).startOf("month").startOf("week")
+  const end = dayjs(date).endOf("month").endOf("week")
+  const days = []
 
-export const getRelativeTime = (date) => {
-  const now = new Date()
-  const diffTime = date - now
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-  if (diffDays === 0) return "Today"
-  if (diffDays === 1) return "Tomorrow"
-  if (diffDays === -1) return "Yesterday"
-  if (diffDays > 0) return `In ${diffDays} days`
-  return `${Math.abs(diffDays)} days ago`
-}
-
-export const getHoursArray = () => {
-  const hours = []
-  for (let i = 0; i < 24; i++) {
-    const date = new Date()
-    date.setHours(i, 0, 0, 0)
-    hours.push({
-      hour: i,
-      display: date.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      }),
-      display24: String(i).padStart(2, "0") + ":00",
-    })
+  let current = start
+  while (current.isSameOrBefore(end)) {
+    days.push(current.toDate())
+    current = current.add(1, "day")
   }
-  return hours
+
+  return days
 }
 
-export const getTimeSlots = () => {
+export const getTimeSlots = (startHour = 0, endHour = 24, interval = 30) => {
   const slots = []
-  for (let hour = 0; hour < 24; hour++) {
-    for (let minute = 0; minute < 60; minute += 30) {
-      const date = new Date()
-      date.setHours(hour, minute, 0, 0)
+  for (let hour = startHour; hour < endHour; hour++) {
+    for (let minute = 0; minute < 60; minute += interval) {
+      const time = dayjs().hour(hour).minute(minute).second(0)
       slots.push({
-        time: String(hour).padStart(2, "0") + ":" + String(minute).padStart(2, "0"),
-        display: date.toLocaleTimeString("en-US", {
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true,
-        }),
+        time: time.format("HH:mm"),
+        display: time.format("h:mm A"),
         value: hour * 60 + minute,
       })
     }
@@ -128,6 +104,85 @@ export const getTimeSlots = () => {
   return slots
 }
 
-export const sortEventsByTime = (events) => {
-  return events.sort((a, b) => new Date(a.date) - new Date(b.date))
+export const generateRecurringEvents = (event, endDate) => {
+  const events = []
+  const { recurring, date } = event
+
+  if (recurring === "none") return [event]
+
+  let current = dayjs(date)
+  const end = dayjs(endDate)
+
+  while (current.isSameOrBefore(end)) {
+    events.push({
+      ...event,
+      id: `${event.id}-${current.format("YYYY-MM-DD")}`,
+      date: current.toDate(),
+      isRecurring: true,
+      originalId: event.id,
+    })
+
+    switch (recurring) {
+      case "daily":
+        current = current.add(1, "day")
+        break
+      case "weekly":
+        current = current.add(1, "week")
+        break
+      case "monthly":
+        current = current.add(1, "month")
+        break
+      case "yearly":
+        current = current.add(1, "year")
+        break
+      default:
+        break
+    }
+  }
+
+  return events
+}
+
+export const getEventPosition = (event, dayStart = 0, dayEnd = 24) => {
+  const eventStart = dayjs(event.date)
+  const eventEnd = dayjs(event.endDate || event.date).add(event.duration || 60, "minute")
+
+  const dayStartMinutes = dayStart * 60
+  const dayEndMinutes = dayEnd * 60
+  const totalMinutes = dayEndMinutes - dayStartMinutes
+
+  const eventStartMinutes = eventStart.hour() * 60 + eventStart.minute()
+  const eventEndMinutes = eventEnd.hour() * 60 + eventEnd.minute()
+
+  const top = ((eventStartMinutes - dayStartMinutes) / totalMinutes) * 100
+  const height = ((eventEndMinutes - eventStartMinutes) / totalMinutes) * 100
+
+  return {
+    top: Math.max(0, top),
+    height: Math.max(2, height),
+  }
+}
+
+export const exportToICS = (events) => {
+  const icsContent = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Advanced Calendar//EN",
+    ...events.flatMap((event) => [
+      "BEGIN:VEVENT",
+      `UID:${event.id}`,
+      `DTSTART:${dayjs(event.date).utc().format("YYYYMMDDTHHmmss")}Z`,
+      `DTEND:${dayjs(event.endDate || event.date)
+        .add(event.duration || 60, "minute")
+        .utc()
+        .format("YYYYMMDDTHHmmss")}Z`,
+      `SUMMARY:${event.title}`,
+      `DESCRIPTION:${event.description || ""}`,
+      `LOCATION:${event.location || ""}`,
+      "END:VEVENT",
+    ]),
+    "END:VCALENDAR",
+  ].join("\r\n")
+
+  return icsContent
 }

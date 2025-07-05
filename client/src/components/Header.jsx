@@ -1,72 +1,150 @@
 "use client"
-
-import { CalendarIcon, Sparkles } from "lucide-react"
+import { Calendar, ChevronLeft, ChevronRight, Plus, Search, Settings, Bell } from "lucide-react"
+import { useCalendar } from "../context/CalendarContext"
+import { formatDate, addMonths, addWeeks, addDays } from "../utils/dateUtils"
 import { useState, useEffect } from "react"
+import "../styles/Header.css"
 
-const Header = () => {
+export default function Header() {
+  const { view, currentDate, searchTerm, dispatch, notifications } = useCalendar()
   const [currentTime, setCurrentTime] = useState(new Date())
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date())
     }, 1000)
-
     return () => clearInterval(timer)
   }, [])
 
+  const handlePrevious = () => {
+    let newDate
+    switch (view) {
+      case "month":
+        newDate = addMonths(currentDate, -1)
+        break
+      case "week":
+        newDate = addWeeks(currentDate, -1)
+        break
+      case "day":
+        newDate = addDays(currentDate, -1)
+        break
+      default:
+        newDate = currentDate
+    }
+    dispatch({ type: "SET_CURRENT_DATE", payload: newDate })
+  }
+
+  const handleNext = () => {
+    let newDate
+    switch (view) {
+      case "month":
+        newDate = addMonths(currentDate, 1)
+        break
+      case "week":
+        newDate = addWeeks(currentDate, 1)
+        break
+      case "day":
+        newDate = addDays(currentDate, 1)
+        break
+      default:
+        newDate = currentDate
+    }
+    dispatch({ type: "SET_CURRENT_DATE", payload: newDate })
+  }
+
+  const handleToday = () => {
+    const today = new Date()
+    dispatch({ type: "SET_CURRENT_DATE", payload: today })
+    dispatch({ type: "SET_SELECTED_DATE", payload: today })
+  }
+
+  const getDateTitle = () => {
+    switch (view) {
+      case "month":
+        return formatDate(currentDate, "MMMM YYYY")
+      case "week":
+        return `Week of ${formatDate(currentDate, "MMM D, YYYY")}`
+      case "day":
+        return formatDate(currentDate, "dddd, MMMM D, YYYY")
+      default:
+        return formatDate(currentDate, "MMMM YYYY")
+    }
+  }
+
+  const requestNotificationPermission = async () => {
+    if ("Notification" in window && Notification.permission === "default") {
+      await Notification.requestPermission()
+    }
+  }
+
   return (
-    <header className="relative bg-white/80 backdrop-blur-xl border-b border-white/20 shadow-lg shadow-slate-200/20">
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-indigo-500/5"></div>
-
-      <div className="relative container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/25">
-                <CalendarIcon className="w-8 h-8 text-white" />
-              </div>
-              <div className="absolute -top-1 -right-1">
-                <Sparkles className="w-4 h-4 text-yellow-400 animate-pulse" />
-              </div>
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-                ProCalendar
-              </h1>
-              <p className="text-sm text-slate-500 font-medium">Professional Calendar Management</p>
-            </div>
+    <div className="header-content">
+      <div className="header-left">
+        <div className="header-logo">
+          <div className="header-logo-icon">
+            <Calendar />
           </div>
-
-          <div className="hidden md:flex items-center space-x-6">
-            <div className="text-right">
-              <div className="text-lg font-semibold text-slate-800">
-                {currentTime.toLocaleDateString("en-US", {
-                  weekday: "long",
-                  month: "short",
-                  day: "numeric",
-                })}
-              </div>
-              <div className="text-sm text-slate-500 font-mono">
-                {currentTime.toLocaleTimeString("en-US", {
-                  hour12: false,
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                })}
-              </div>
-            </div>
-
-            <div className="w-px h-12 bg-gradient-to-b from-transparent via-slate-300 to-transparent"></div>
-
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
-              <span className="text-sm font-medium text-slate-600">Live</span>
-            </div>
+          <div className="header-logo-text">
+            <h1>ProCalendar</h1>
+            <p>Professional Calendar Suite</p>
           </div>
         </div>
+
+        <div className="header-nav">
+          <button onClick={handleToday}>Today</button>
+          <button className="nav-button" onClick={handlePrevious}>
+            <ChevronLeft />
+          </button>
+          <button className="nav-button" onClick={handleNext}>
+            <ChevronRight />
+          </button>
+          <div className="header-title">{getDateTitle()}</div>
+        </div>
       </div>
-    </header>
+
+      <div className="header-right">
+        <div className="search-container">
+          <Search className="search-icon" />
+          <input
+            type="text"
+            placeholder="Search events..."
+            value={searchTerm}
+            onChange={(e) => dispatch({ type: "SET_SEARCH_TERM", payload: e.target.value })}
+            className="search-input"
+          />
+        </div>
+
+        <div className="view-toggle">
+          {["month", "week", "day"].map((viewType) => (
+            <button
+              key={viewType}
+              onClick={() => dispatch({ type: "SET_VIEW", payload: viewType })}
+              className={view === viewType ? "active" : ""}
+            >
+              {viewType.charAt(0).toUpperCase() + viewType.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={requestNotificationPermission}
+          className="nav-button"
+          title="Enable notifications"
+          style={{ position: "relative" }}
+        >
+          <Bell />
+          {notifications.length > 0 && <span className="notification-badge">{notifications.length}</span>}
+        </button>
+
+        <button onClick={() => dispatch({ type: "TOGGLE_EVENT_MODAL" })} className="create-button">
+          <Plus />
+          Create Event
+        </button>
+
+        <button onClick={() => dispatch({ type: "TOGGLE_SETTINGS_MODAL" })} className="nav-button">
+          <Settings />
+        </button>
+      </div>
+    </div>
   )
 }
-
-export default Header

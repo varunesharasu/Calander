@@ -1,73 +1,54 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, Calendar, Clock, Tag, FileText, Bell, Repeat, MapPin, Users } from "lucide-react"
-import { useEvents } from "../context/EventContext"
-import { getTimeSlots } from "../utils/dateUtils"
+import { X, Calendar, Clock, Tag, MapPin, Users, Bell, Repeat, Trash2, Save, AlertTriangle } from "lucide-react"
+import { useCalendar } from "../context/CalendarContext"
+import { formatDate, getTimeSlots } from "../utils/dateUtils"
+import "../styles/EventModal.css"
 
-const EventModal = ({ isOpen, onClose, selectedDate, editingEvent }) => {
-  const { addEvent, updateEvent } = useEvents()
+export default function EventModal() {
+  const { showEventModal, selectedEvent, selectedDate, categories, dispatch, canDeleteEvent, isEventTimeInPast } =
+    useCalendar()
 
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    date: selectedDate,
+    date: "",
     time: "09:00",
     endTime: "10:00",
     category: "personal",
-    priority: "medium",
-    reminder: "15",
-    recurring: "none",
     location: "",
     attendees: "",
+    reminder: "15",
+    recurring: "none",
     allDay: false,
   })
 
   const [errors, setErrors] = useState({})
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    if (editingEvent) {
-      const eventDate = new Date(editingEvent.date)
-      const endDate = editingEvent.endDate
-        ? new Date(editingEvent.endDate)
-        : new Date(eventDate.getTime() + 60 * 60 * 1000)
-
+    if (selectedEvent) {
       setFormData({
-        title: editingEvent.title || "",
-        description: editingEvent.description || "",
-        date: eventDate,
-        time: eventDate.toTimeString().slice(0, 5),
-        endTime: endDate.toTimeString().slice(0, 5),
-        category: editingEvent.category || "personal",
-        priority: editingEvent.priority || "medium",
-        reminder: editingEvent.reminder || "15",
-        recurring: editingEvent.recurring || "none",
-        location: editingEvent.location || "",
-        attendees: editingEvent.attendees || "",
-        allDay: editingEvent.allDay || false,
+        title: selectedEvent.title || "",
+        description: selectedEvent.description || "",
+        date: formatDate(selectedEvent.date, "YYYY-MM-DD"),
+        time: formatDate(selectedEvent.date, "HH:mm"),
+        endTime: selectedEvent.endDate ? formatDate(selectedEvent.endDate, "HH:mm") : "10:00",
+        category: selectedEvent.category || "personal",
+        location: selectedEvent.location || "",
+        attendees: selectedEvent.attendees || "",
+        reminder: selectedEvent.reminder || "15",
+        recurring: selectedEvent.recurring || "none",
+        allDay: selectedEvent.allDay || false,
       })
-    } else {
+    } else if (selectedDate) {
       setFormData((prev) => ({
         ...prev,
-        date: selectedDate,
+        date: formatDate(selectedDate, "YYYY-MM-DD"),
       }))
     }
-  }, [editingEvent, selectedDate])
-
-  const categories = [
-    { value: "personal", label: "Personal", color: "bg-blue-500", emoji: "👤" },
-    { value: "work", label: "Work", color: "bg-green-500", emoji: "💼" },
-    { value: "health", label: "Health", color: "bg-red-500", emoji: "🏥" },
-    { value: "social", label: "Social", color: "bg-purple-500", emoji: "👥" },
-    { value: "travel", label: "Travel", color: "bg-orange-500", emoji: "✈️" },
-    { value: "education", label: "Education", color: "bg-indigo-500", emoji: "📚" },
-  ]
-
-  const priorities = [
-    { value: "low", label: "Low", color: "text-green-600", emoji: "🟢" },
-    { value: "medium", label: "Medium", color: "text-yellow-600", emoji: "🟡" },
-    { value: "high", label: "High", color: "text-red-600", emoji: "🔴" },
-  ]
+  }, [selectedEvent, selectedDate])
 
   const timeSlots = getTimeSlots()
 
@@ -86,294 +67,402 @@ const EventModal = ({ isOpen, onClose, selectedDate, editingEvent }) => {
       newErrors.endTime = "End time must be after start time"
     }
 
+    // Check if event time is in the past
+    if (!formData.allDay && isEventTimeInPast(formData.date, formData.time)) {
+      newErrors.time = "Cannot create events in the past"
+    }
+
+    // For all-day events, check if the date is in the past
+    if (formData.allDay) {
+      const eventDate = new Date(formData.date)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      eventDate.setHours(0, 0, 0, 0)
+
+      if (eventDate < today) {
+        newErrors.date = "Cannot create events in the past"
+      }
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
+    setIsLoading(true)
 
-    if (!validateForm()) return
-
-    let eventDateTime, endDateTime
-
-    if (formData.allDay) {
-      eventDateTime = new Date(formData.date)
-      eventDateTime.setHours(0, 0, 0, 0)
-      endDateTime = new Date(formData.date)
-      endDateTime.setHours(23, 59, 59, 999)
-    } else {
-      const [hours, minutes] = formData.time.split(":")
-      const [endHours, endMinutes] = formData.endTime.split(":")
-
-      eventDateTime = new Date(formData.date)
-      eventDateTime.setHours(Number.parseInt(hours), Number.parseInt(minutes), 0, 0)
-
-      endDateTime = new Date(formData.date)
-      endDateTime.setHours(Number.parseInt(endHours), Number.parseInt(endMinutes), 0, 0)
+    if (!validateForm()) {
+      setIsLoading(false)
+      return
     }
+
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
+    const eventDate = new Date(`${formData.date}T${formData.time}`)
+    const endDate = new Date(`${formData.date}T${formData.endTime}`)
 
     const eventData = {
-      ...formData,
-      date: eventDateTime,
-      endDate: endDateTime,
-      duration: formData.allDay ? "All day" : Math.round((endDateTime - eventDateTime) / (1000 * 60)) + " min",
+      id: selectedEvent?.id || Date.now().toString(),
+      title: formData.title,
+      description: formData.description,
+      date: eventDate,
+      endDate: formData.allDay ? null : endDate,
+      category: formData.category,
+      location: formData.location,
+      attendees: formData.attendees,
+      reminder: formData.reminder,
+      recurring: formData.recurring,
+      allDay: formData.allDay,
+      duration: formData.allDay ? null : (endDate - eventDate) / (1000 * 60),
     }
 
-    if (editingEvent) {
-      updateEvent(editingEvent.id, eventData)
+    if (selectedEvent) {
+      dispatch({ type: "UPDATE_EVENT", payload: eventData })
     } else {
-      addEvent(eventData)
+      dispatch({ type: "ADD_EVENT", payload: eventData })
     }
 
-    onClose()
+    setIsLoading(false)
+    handleClose()
   }
 
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }))
+  const handleDelete = async () => {
+    if (!selectedEvent) return
+
+    if (!canDeleteEvent(selectedEvent)) {
+      alert("Cannot delete event within 30 minutes of start time!")
+      return
+    }
+
+    if (window.confirm("Are you sure you want to delete this event?")) {
+      setIsLoading(true)
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      dispatch({ type: "DELETE_EVENT", payload: selectedEvent.id })
+      setIsLoading(false)
+      handleClose()
     }
   }
 
-  if (!isOpen) return null
+  const handleClose = () => {
+    dispatch({ type: "TOGGLE_EVENT_MODAL" })
+    dispatch({ type: "SET_SELECTED_EVENT", payload: null })
+    setFormData({
+      title: "",
+      description: "",
+      date: "",
+      time: "09:00",
+      endTime: "10:00",
+      category: "personal",
+      location: "",
+      attendees: "",
+      reminder: "15",
+      recurring: "none",
+      allDay: false,
+    })
+    setErrors({})
+  }
+
+  const getTimeUntilEvent = () => {
+    if (!selectedEvent) return null
+    const now = new Date()
+    const eventTime = new Date(selectedEvent.date)
+    const timeDifference = eventTime.getTime() - now.getTime()
+    const minutesDifference = Math.floor(timeDifference / (1000 * 60))
+
+    if (minutesDifference <= 30 && minutesDifference > 0) {
+      return minutesDifference
+    }
+    return null
+  }
+
+  const minutesUntilEvent = getTimeUntilEvent()
+
+  if (!showEventModal) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose}></div>
-
-      <div className="relative bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-white/20">
-        <div className="sticky top-0 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 p-6 rounded-t-3xl">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-slate-800">{editingEvent ? "Edit Event" : "Create New Event"}</h2>
-            <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors duration-200">
-              <X className="w-6 h-6 text-slate-600" />
+    <div className="modal-overlay" onClick={handleClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="modal-header">
+          <div className="modal-header-content">
+            <div className="modal-header-info">
+              <div className="modal-icon">
+                <Calendar />
+              </div>
+              <div className="modal-title-section">
+                <h2>{selectedEvent ? "Edit Event" : "Create New Event"}</h2>
+                <p>Fill in the details for your event</p>
+              </div>
+            </div>
+            <button onClick={handleClose} className="modal-close">
+              <X />
             </button>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Event Title *</label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) => handleChange("title", e.target.value)}
-              className={`w-full px-4 py-3 rounded-xl border ${errors.title ? "border-red-300" : "border-slate-200"} focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200`}
-              placeholder="Enter event title..."
-            />
-            {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
+        {/* Delete Warning */}
+        {selectedEvent && minutesUntilEvent !== null && (
+          <div className="delete-warning">
+            <AlertTriangle />
+            <span>Cannot delete event within 30 minutes of start time ({minutesUntilEvent} minutes remaining)</span>
           </div>
+        )}
 
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
-              <FileText className="w-4 h-4 mr-2" />
-              Description
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => handleChange("description", e.target.value)}
-              rows={3}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 resize-none"
-              placeholder="Add event description..."
-            />
-          </div>
-
-          {/* Date and All Day Toggle */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
-                <Calendar className="w-4 h-4 mr-2" />
-                Date *
-              </label>
-              <input
-                type="date"
-                value={formData.date.toISOString().split("T")[0]}
-                onChange={(e) => handleChange("date", new Date(e.target.value))}
-                className={`w-full px-4 py-3 rounded-xl border ${errors.date ? "border-red-300" : "border-slate-200"} focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200`}
-              />
-              {errors.date && <p className="text-red-500 text-sm mt-1">{errors.date}</p>}
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">All Day Event</label>
-              <div className="flex items-center h-12">
-                <input
-                  type="checkbox"
-                  checked={formData.allDay}
-                  onChange={(e) => handleChange("allDay", e.target.checked)}
-                  className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-                />
-                <span className="ml-2 text-sm text-slate-600">This is an all-day event</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Time Selection */}
-          {!formData.allDay && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
-                  <Clock className="w-4 h-4 mr-2" />
-                  Start Time
-                </label>
-                <select
-                  value={formData.time}
-                  onChange={(e) => handleChange("time", e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
-                >
-                  {timeSlots.map((slot) => (
-                    <option key={slot.time} value={slot.time}>
-                      {slot.display}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">End Time</label>
-                <select
-                  value={formData.endTime}
-                  onChange={(e) => handleChange("endTime", e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border ${errors.endTime ? "border-red-300" : "border-slate-200"} focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200`}
-                >
-                  {timeSlots.map((slot) => (
-                    <option key={slot.time} value={slot.time}>
-                      {slot.display}
-                    </option>
-                  ))}
-                </select>
-                {errors.endTime && <p className="text-red-500 text-sm mt-1">{errors.endTime}</p>}
-              </div>
+        {/* Past Time Warning */}
+        {(errors.time || errors.date) &&
+          (errors.time === "Cannot create events in the past" ||
+            errors.date === "Cannot create events in the past") && (
+            <div className="past-time-warning">
+              <AlertTriangle />
+              <span>Cannot create events in the past. Please select a future date and time.</span>
             </div>
           )}
 
-          {/* Category and Priority */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
-                <Tag className="w-4 h-4 mr-2" />
-                Category
-              </label>
-              <select
-                value={formData.category}
-                onChange={(e) => handleChange("category", e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
-              >
-                {categories.map((cat) => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.emoji} {cat.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Priority</label>
-              <select
-                value={formData.priority}
-                onChange={(e) => handleChange("priority", e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
-              >
-                {priorities.map((priority) => (
-                  <option key={priority.value} value={priority.value}>
-                    {priority.emoji} {priority.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Location and Attendees */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
-                <MapPin className="w-4 h-4 mr-2" />
-                Location
-              </label>
+        {/* Form */}
+        <div className="modal-body">
+          <form onSubmit={handleSubmit} className="modal-form">
+            {/* Title */}
+            <div className="form-group">
+              <label className="form-label">Event Title *</label>
               <input
                 type="text"
-                value={formData.location}
-                onChange={(e) => handleChange("location", e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
-                placeholder="Enter location..."
+                value={formData.title}
+                onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+                className={`form-input ${errors.title ? "error" : ""}`}
+                placeholder="Enter event title..."
+              />
+              {errors.title && <p className="error-message">{errors.title}</p>}
+            </div>
+
+            {/* Description */}
+            <div className="form-group">
+              <label className="form-label-with-icon">
+                <Tag />
+                Description
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+                className="form-input form-textarea"
+                placeholder="Add event description..."
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
-                <Users className="w-4 h-4 mr-2" />
-                Attendees
-              </label>
-              <input
-                type="text"
-                value={formData.attendees}
-                onChange={(e) => handleChange("attendees", e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
-                placeholder="Enter attendees..."
-              />
-            </div>
-          </div>
+            {/* Date and All Day */}
+            <div className="form-group-inline">
+              <div className="form-group">
+                <label className="form-label-with-icon">
+                  <Calendar />
+                  Date *
+                </label>
+                <input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, date: e.target.value }))}
+                  className={`form-input ${errors.date ? "error" : ""}`}
+                />
+                {errors.date && <p className="error-message">{errors.date}</p>}
+              </div>
 
-          {/* Reminder and Recurring */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
-                <Bell className="w-4 h-4 mr-2" />
-                Reminder
-              </label>
-              <select
-                value={formData.reminder}
-                onChange={(e) => handleChange("reminder", e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
-              >
-                <option value="none">No reminder</option>
-                <option value="5">5 minutes before</option>
-                <option value="15">15 minutes before</option>
-                <option value="30">30 minutes before</option>
-                <option value="60">1 hour before</option>
-                <option value="1440">1 day before</option>
-              </select>
+              <div className="form-group">
+                <label className="form-label">All Day Event</label>
+                <div className="checkbox-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={formData.allDay}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, allDay: e.target.checked }))}
+                      className="checkbox-input"
+                    />
+                    <span className="checkbox-text">This is an all-day event</span>
+                  </label>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
-                <Repeat className="w-4 h-4 mr-2" />
+            {/* Time Selection */}
+            {!formData.allDay && (
+              <div className="form-group-inline">
+                <div className="form-group">
+                  <label className="form-label-with-icon">
+                    <Clock />
+                    Start Time
+                  </label>
+                  <select
+                    value={formData.time}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, time: e.target.value }))}
+                    className={`form-input ${errors.time ? "error" : ""}`}
+                  >
+                    {timeSlots.map((slot) => (
+                      <option key={slot.time} value={slot.time}>
+                        {slot.display}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.time && <p className="error-message">{errors.time}</p>}
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">End Time</label>
+                  <select
+                    value={formData.endTime}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, endTime: e.target.value }))}
+                    className={`form-input ${errors.endTime ? "error" : ""}`}
+                  >
+                    {timeSlots.map((slot) => (
+                      <option key={slot.time} value={slot.time}>
+                        {slot.display}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.endTime && <p className="error-message">{errors.endTime}</p>}
+                </div>
+              </div>
+            )}
+
+            {/* Category and Reminder */}
+            <div className="form-group-inline">
+              <div className="form-group">
+                <label className="form-label-with-icon">
+                  <Tag />
+                  Category
+                </label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
+                  className="form-input"
+                >
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label-with-icon">
+                  <Bell />
+                  Reminder
+                </label>
+                <select
+                  value={formData.reminder}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, reminder: e.target.value }))}
+                  className="form-input"
+                >
+                  <option value="none">No reminder</option>
+                  <option value="5">5 minutes before</option>
+                  <option value="15">15 minutes before</option>
+                  <option value="30">30 minutes before</option>
+                  <option value="60">1 hour before</option>
+                  <option value="1440">1 day before</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Location and Attendees */}
+            <div className="form-group-inline">
+              <div className="form-group">
+                <label className="form-label-with-icon">
+                  <MapPin />
+                  Location
+                </label>
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
+                  className="form-input"
+                  placeholder="Enter location..."
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label-with-icon">
+                  <Users />
+                  Attendees
+                </label>
+                <input
+                  type="text"
+                  value={formData.attendees}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, attendees: e.target.value }))}
+                  className="form-input"
+                  placeholder="Comma-separated emails..."
+                />
+              </div>
+            </div>
+
+            {/* Recurring */}
+            <div className="form-group">
+              <label className="form-label-with-icon">
+                <Repeat />
                 Recurring
               </label>
               <select
                 value={formData.recurring}
-                onChange={(e) => handleChange("recurring", e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+                onChange={(e) => setFormData((prev) => ({ ...prev, recurring: e.target.value }))}
+                className="form-input"
               >
-                <option value="none">No repeat</option>
+                <option value="none">Does not repeat</option>
                 <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
                 <option value="yearly">Yearly</option>
               </select>
             </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-4 pt-6 border-t border-slate-200/50">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-3 text-slate-600 hover:text-slate-800 font-medium transition-colors duration-200"
-            >
-              Cancel
-            </button>
-            <button type="submit" className="btn-primary">
-              {editingEvent ? "Update Event" : "Create Event"}
-            </button>
-          </div>
-        </form>
+            {/* Action Buttons */}
+            <div className="form-actions">
+              <div className="form-actions-left">
+                {selectedEvent && (
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={isLoading || (selectedEvent && !canDeleteEvent(selectedEvent))}
+                    className={`button button-danger ${isLoading || (selectedEvent && !canDeleteEvent(selectedEvent)) ? "button-loading" : ""}`}
+                    title={
+                      selectedEvent && !canDeleteEvent(selectedEvent)
+                        ? "Cannot delete event within 30 minutes"
+                        : "Delete event"
+                    }
+                  >
+                    <Trash2 />
+                    Delete Event
+                  </button>
+                )}
+              </div>
+              <div className="form-actions-right">
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  disabled={isLoading}
+                  className={`button button-secondary ${isLoading ? "button-loading" : ""}`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className={`button button-primary ${isLoading ? "button-loading" : ""}`}
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="loading-spinner" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save />
+                      {selectedEvent ? "Update Event" : "Create Event"}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   )
 }
-
-export default EventModal
