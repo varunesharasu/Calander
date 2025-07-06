@@ -11,14 +11,14 @@ import AgendaView from "./components/AgendaView"
 import EventModal from "./components/EventModal"
 import SettingsModal from "./components/SettingsModal"
 import NotificationCenter from "./components/NotificationCenter"
-import QuickActions from "./components/QuickActions"
+// import QuickActions from "./components/QuickActions"
 import EventHistory from "./components/EventHistory"
 import AdvancedSearch from "./components/AdvancedSearch"
 import ImportModal from "./components/ImportModal"
 
 import "./styles/global.css"
 import "./styles/App.css"
-import "./styles/QuickActions.css"
+// import "./styles/QuickActions.css"
 import "./styles/EventHistory.css"
 import "./styles/BulkActions.css"
 import "./styles/AdvancedSearch.css"
@@ -69,8 +69,8 @@ function CalendarApp() {
         <div className="app-sidebar">
           <Sidebar />
           <div className="sidebar-bottom">
-            <QuickActions />
-            <EventHistory />
+            {/* <QuickActions /> */}
+            {/* <EventHistory /> */}
           </div>
         </div>
         <div className="app-main">
