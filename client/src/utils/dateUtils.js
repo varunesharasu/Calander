@@ -1,11 +1,11 @@
 import dayjs from "dayjs"
-import utc from "dayjs/plugin/utc"
-import timezone from "dayjs/plugin/timezone"
-import isSameOrBefore from "dayjs/plugin/isSameOrBefore"
-import isSameOrAfter from "dayjs/plugin/isSameOrAfter"
-import weekOfYear from "dayjs/plugin/weekOfYear"
-import relativeTime from "dayjs/plugin/relativeTime"
-import customParseFormat from "dayjs/plugin/customParseFormat"
+import utc from "dayjs/plugin/utc.js"
+import timezone from "dayjs/plugin/timezone.js"
+import isSameOrBefore from "dayjs/plugin/isSameOrBefore.js"
+import isSameOrAfter from "dayjs/plugin/isSameOrAfter.js"
+import weekOfYear from "dayjs/plugin/weekOfYear.js"
+import relativeTime from "dayjs/plugin/relativeTime.js"
+import customParseFormat from "dayjs/plugin/customParseFormat.js"
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -25,6 +25,10 @@ export const formatTime = (date, format = "HH:mm") => {
 
 export const formatDateTime = (date, format = "YYYY-MM-DD HH:mm") => {
   return dayjs(date).format(format)
+}
+
+export const formatMonthYear = (date) => {
+  return dayjs(date).format("MMMM YYYY")
 }
 
 export const isToday = (date) => {
@@ -47,6 +51,10 @@ export const addMonths = (date, months) => {
   return dayjs(date).add(months, "month").toDate()
 }
 
+export const subMonths = (date, months) => {
+  return dayjs(date).subtract(months, "month").toDate()
+}
+
 export const startOfMonth = (date) => {
   return dayjs(date).startOf("month").toDate()
 }
@@ -65,6 +73,26 @@ export const endOfWeek = (date) => {
 
 export const getDaysInMonth = (date) => {
   return dayjs(date).daysInMonth()
+}
+
+export const getFirstDayOfMonth = (date) => {
+  return dayjs(date).startOf("month").day()
+}
+
+export const getDayOfYear = (date) => {
+  return dayjs(date).dayOfYear()
+}
+
+export const getWeekNumber = (date) => {
+  return dayjs(date).week()
+}
+
+export const getQuarter = (date) => {
+  return dayjs(date).quarter()
+}
+
+export const getRelativeTime = (date) => {
+  return dayjs(date).fromNow()
 }
 
 export const getWeekDays = (startDate) => {
@@ -102,6 +130,21 @@ export const getTimeSlots = (startHour = 0, endHour = 24, interval = 30) => {
     }
   }
   return slots
+}
+
+export const getHoursArray = () => {
+  const hours = []
+  for (let i = 0; i < 24; i++) {
+    hours.push({
+      hour: i,
+      display: i === 0 ? "12 AM" : i < 12 ? `${i} AM` : i === 12 ? "12 PM" : `${i - 12} PM`,
+    })
+  }
+  return hours
+}
+
+export const sortEventsByTime = (events) => {
+  return events.sort((a, b) => new Date(a.date) - new Date(b.date))
 }
 
 export const generateRecurringEvents = (event, endDate) => {

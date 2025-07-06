@@ -4,7 +4,6 @@ import React from "react"
 import { useCalendar } from "../context/CalendarContext"
 import { formatDate, isToday, isSameDay, getEventPosition } from "../utils/dateUtils"
 import { MapPin } from "lucide-react"
-import "../styles/DayView.css"
 
 export default function DayView() {
   const { currentDate, events, categories, filterCategory, searchTerm, dispatch } = useCalendar()
@@ -42,40 +41,110 @@ export default function DayView() {
   }
 
   return (
-    <div className="day-view-container">
+    <div style={{ padding: "24px" }}>
       {/* Day header */}
-      <div className="day-header">
-        <h2 className="day-title">{formatDate(currentDate, "dddd, MMMM D, YYYY")}</h2>
-        {isToday(currentDate) && <p className="day-subtitle">Today</p>}
+      <div style={{ marginBottom: "24px", textAlign: "center" }}>
+        <h2
+          style={{
+            fontSize: "24px",
+            fontWeight: "700",
+            color: "var(--text-primary)",
+            marginBottom: "8px",
+          }}
+        >
+          {formatDate(currentDate, "dddd, MMMM D, YYYY")}
+        </h2>
+        {isToday(currentDate) && <p style={{ color: "#2f5249", fontWeight: "500" }}>Today</p>}
       </div>
 
       {/* Events summary */}
-      <div className="day-summary">
-        <h3 className="day-summary-title">
+      <div
+        style={{
+          marginBottom: "24px",
+          padding: "16px",
+          background: "var(--bg-secondary)",
+          borderRadius: "8px",
+          border: "1px solid var(--border-primary)",
+        }}
+      >
+        <h3
+          style={{
+            fontWeight: "600",
+            color: "var(--text-primary)",
+            marginBottom: "8px",
+          }}
+        >
           {dayEvents.length} event{dayEvents.length !== 1 ? "s" : ""} today
         </h3>
         {dayEvents.length > 0 && (
-          <div className="day-summary-events">
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             {dayEvents.slice(0, 3).map((event) => (
-              <div key={event.id} className="day-summary-event">
-                <div className="day-summary-dot" style={{ backgroundColor: getCategoryColor(event.category) }} />
+              <div
+                key={event.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  fontSize: "14px",
+                }}
+              >
+                <div
+                  style={{
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    backgroundColor: getCategoryColor(event.category),
+                  }}
+                />
                 <span>{formatDate(event.date, "h:mm A")}</span>
                 <span>{event.title}</span>
               </div>
             ))}
-            {dayEvents.length > 3 && <p className="day-summary-more">+{dayEvents.length - 3} more events</p>}
+            {dayEvents.length > 3 && (
+              <p style={{ fontSize: "14px", color: "var(--text-secondary)", marginTop: "4px" }}>
+                +{dayEvents.length - 3} more events
+              </p>
+            )}
           </div>
         )}
       </div>
 
       {/* Time grid */}
-      <div className="day-grid">
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "80px 1fr",
+          gap: 0,
+          border: "1px solid var(--border-primary)",
+          borderRadius: "8px",
+          overflow: "hidden",
+          background: "var(--bg-primary)",
+        }}
+      >
         {timeSlots.map((hour) => (
           <React.Fragment key={hour}>
-            <div className="day-time-slot">
+            <div
+              style={{
+                padding: "12px 8px",
+                textAlign: "right",
+                fontSize: "12px",
+                color: "var(--text-secondary)",
+                borderBottom: "1px solid var(--border-primary)",
+                background: "var(--bg-secondary)",
+                minHeight: "60px",
+              }}
+            >
               {hour === 0 ? "12 AM" : hour < 12 ? `${hour} AM` : hour === 12 ? "12 PM" : `${hour - 12} PM`}
             </div>
-            <div className="day-content-slot">
+            <div
+              style={{
+                position: "relative",
+                borderBottom: "1px solid var(--border-primary)",
+                background: "var(--bg-primary)",
+                minHeight: "60px",
+                padding: "4px 8px",
+              }}
+            >
               {dayEvents
                 .filter((event) => event.date.getHours() === hour)
                 .map((event) => {
@@ -83,25 +152,64 @@ export default function DayView() {
                   return (
                     <div
                       key={event.id}
-                      className="day-event"
                       style={{
+                        position: "absolute",
+                        left: "8px",
+                        right: "8px",
+                        borderRadius: "6px",
+                        padding: "8px 12px",
+                        cursor: "pointer",
+                        color: "white",
+                        fontWeight: "500",
+                        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
                         backgroundColor: getCategoryColor(event.category),
                         top: `${position.top}%`,
                         height: `${Math.max(position.height, 15)}%`,
                       }}
                       onClick={() => handleEventClick(event)}
                     >
-                      <div className="day-event-title">{event.title}</div>
-                      <div className="day-event-details">
+                      <div
+                        style={{
+                          fontWeight: "600",
+                          marginBottom: "4px",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {event.title}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          opacity: "0.9",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
                         <span>{formatDate(event.date, "h:mm A")}</span>
                         {event.location && (
                           <>
-                            <MapPin />
+                            <MapPin style={{ width: "10px", height: "10px" }} />
                             <span>{event.location}</span>
                           </>
                         )}
                       </div>
-                      {event.description && <div className="day-event-description">{event.description}</div>}
+                      {event.description && (
+                        <div
+                          style={{
+                            fontSize: "11px",
+                            opacity: "0.8",
+                            marginTop: "4px",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          {event.description}
+                        </div>
+                      )}
                     </div>
                   )
                 })}

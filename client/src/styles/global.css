@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 
 :root {
-  /* Color Palette from provided image */
+  /* Color Palette */
   --color-primary-dark: #2f5249;
   --color-primary-medium: #437059;
   --color-primary-light: #97b067;
@@ -21,7 +21,7 @@
 }
 
 [data-theme="dark"] {
-  /* Dark theme colors - improved visibility */
+  /* Dark theme colors */
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
   --bg-tertiary: #334155;
@@ -125,105 +125,6 @@ body {
   animation: scaleIn 0.2s ease-out;
 }
 
-/* Common Button Styles */
-.button {
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.button-primary {
-  background: var(--color-primary-dark);
-  color: white;
-}
-
-.button-primary:hover {
-  background: var(--color-primary-medium);
-}
-
-.button-secondary {
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-primary);
-}
-
-.button-secondary:hover {
-  background: var(--border-primary);
-}
-
-.button-danger {
-  background: #ef4444;
-  color: white;
-}
-
-.button-danger:hover {
-  background: #dc2626;
-}
-
-.button-loading {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-/* Form Styles */
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin-bottom: 6px;
-}
-
-.form-input {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--border-primary);
-  border-radius: 6px;
-  font-size: 14px;
-  transition: all 0.2s;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: var(--color-primary-dark);
-  box-shadow: 0 0 0 3px rgba(47, 82, 73, 0.1);
-}
-
-.form-input.error {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-}
-
-.form-textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.error-message {
-  color: #ef4444;
-  font-size: 12px;
-  margin-top: 4px;
-}
-
 /* Utility classes */
 .hidden {
   display: none;
@@ -235,11 +136,5 @@ body {
   }
   .md\:hidden {
     display: none;
-  }
-}
-
-@media (max-width: 768px) {
-  .form-row {
-    grid-template-columns: 1fr;
   }
 }

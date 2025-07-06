@@ -1,10 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { X, Download, Upload, Plus, Sun, Moon, Monitor } from "lucide-react"
+import { X, Download, Plus, Sun, Moon, Monitor } from "lucide-react"
 import { useCalendar } from "../context/CalendarContext"
 import { exportToICS } from "../utils/dateUtils"
-import "../styles/SettingsModal.css"
 
 export default function SettingsModal() {
   const { showSettingsModal, settings, categories, events, dispatch } = useCalendar()
@@ -43,69 +42,6 @@ export default function SettingsModal() {
     URL.revokeObjectURL(url)
   }
 
-  const handleImport = (event) => {
-    const file = event.target.files[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        try {
-          const content = e.target.result
-          // Basic ICS parsing - in a real app, you'd use a proper ICS parser
-          const events = parseICSContent(content)
-          events.forEach((event) => {
-            dispatch({ type: "ADD_EVENT", payload: event })
-          })
-        } catch (error) {
-          console.error("Error importing calendar:", error)
-          alert("Error importing calendar file")
-        }
-      }
-      reader.readAsText(file)
-    }
-  }
-
-  const parseICSContent = (content) => {
-    // Simplified ICS parsing - in production, use a proper library
-    const events = []
-    const lines = content.split("\n")
-    let currentEvent = null
-
-    lines.forEach((line) => {
-      const [key, value] = line.split(":")
-
-      if (key === "BEGIN" && value === "VEVENT") {
-        currentEvent = { id: Date.now().toString() + Math.random() }
-      } else if (key === "END" && value === "VEVENT" && currentEvent) {
-        events.push(currentEvent)
-        currentEvent = null
-      } else if (currentEvent) {
-        switch (key) {
-          case "SUMMARY":
-            currentEvent.title = value
-            break
-          case "DESCRIPTION":
-            currentEvent.description = value
-            break
-          case "DTSTART":
-            currentEvent.date = new Date(
-              value.replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/, "$1-$2-$3T$4:$5:$6"),
-            )
-            break
-          case "LOCATION":
-            currentEvent.location = value
-            break
-        }
-      }
-    })
-
-    return events.map((event) => ({
-      ...event,
-      category: "personal",
-      reminder: "15",
-      recurring: "none",
-    }))
-  }
-
   const handleClose = () => {
     dispatch({ type: "TOGGLE_SETTINGS_MODAL" })
   }
@@ -119,41 +55,158 @@ export default function SettingsModal() {
   if (!showSettingsModal) return null
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
-      <div className="modal-content settings-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <div className="modal-header-content">
-            <div className="modal-header-info">
-              <div className="modal-icon">
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0, 0, 0, 0.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 50,
+        padding: "16px",
+      }}
+      onClick={handleClose}
+    >
+      <div
+        style={{
+          background: "var(--bg-primary)",
+          borderRadius: "12px",
+          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.15)",
+          maxWidth: "700px",
+          width: "100%",
+          maxHeight: "90vh",
+          overflowY: "auto",
+          border: "1px solid var(--border-primary)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          style={{
+            padding: "24px 24px 0 24px",
+            borderBottom: "1px solid var(--border-primary)",
+            marginBottom: "24px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingBottom: "24px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  background: "linear-gradient(135deg, #2f5249, #437059)",
+                  borderRadius: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "white",
+                }}
+              >
                 <Monitor />
               </div>
-              <div className="modal-title-section">
-                <h2>Settings</h2>
-                <p>Customize your calendar experience</p>
+              <div>
+                <h2
+                  style={{
+                    fontSize: "20px",
+                    fontWeight: "600",
+                    color: "var(--text-primary)",
+                    margin: "0 0 4px 0",
+                  }}
+                >
+                  Settings
+                </h2>
+                <p style={{ fontSize: "14px", color: "var(--text-secondary)", margin: 0 }}>
+                  Customize your calendar experience
+                </p>
               </div>
             </div>
-            <button onClick={handleClose} className="modal-close">
+            <button
+              onClick={handleClose}
+              style={{
+                width: "32px",
+                height: "32px",
+                border: "none",
+                background: "var(--bg-tertiary)",
+                borderRadius: "6px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--text-secondary)",
+              }}
+            >
               <X />
             </button>
           </div>
         </div>
 
-        <div className="modal-body">
-          <div className="settings-modal-body">
+        <div style={{ padding: "0 24px 24px 24px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
             {/* Theme Settings */}
-            <div className="settings-section">
-              <h3 className="settings-section-title">Appearance</h3>
-              <div className="settings-group">
-                <div className="settings-item">
-                  <label className="form-label">Theme</label>
-                  <div className="theme-selector">
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <h3
+                style={{
+                  fontSize: "18px",
+                  fontWeight: "600",
+                  color: "var(--text-primary)",
+                  marginBottom: "8px",
+                  paddingBottom: "8px",
+                  borderBottom: "2px solid #97b067",
+                }}
+              >
+                Appearance
+              </h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      color: "var(--text-primary)",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    Theme
+                  </label>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(3, 1fr)",
+                      gap: "12px",
+                      marginTop: "8px",
+                    }}
+                  >
                     {themeOptions.map((option) => (
                       <button
                         key={option.value}
                         onClick={() => handleSettingChange("theme", option.value)}
-                        className={`theme-option ${settings.theme === option.value ? "active" : ""}`}
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: "8px",
+                          padding: "16px 12px",
+                          border: `2px solid ${settings.theme === option.value ? "#2f5249" : "var(--border-primary)"}`,
+                          borderRadius: "12px",
+                          background:
+                            settings.theme === option.value
+                              ? "linear-gradient(135deg, #97b067, #e3de61)"
+                              : "var(--bg-secondary)",
+                          cursor: "pointer",
+                          fontSize: "14px",
+                          fontWeight: "500",
+                          color: settings.theme === option.value ? "#2f5249" : "var(--text-secondary)",
+                        }}
                       >
-                        <option.icon />
+                        <option.icon style={{ width: "24px", height: "24px" }} />
                         <span>{option.label}</span>
                       </button>
                     ))}
@@ -163,73 +216,232 @@ export default function SettingsModal() {
             </div>
 
             {/* General Settings */}
-            <div className="settings-section">
-              <h3 className="settings-section-title">General</h3>
-              <div className="settings-group">
-                <div className="settings-item">
-                  <label className="form-label">Week starts on</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <h3
+                style={{
+                  fontSize: "18px",
+                  fontWeight: "600",
+                  color: "var(--text-primary)",
+                  marginBottom: "8px",
+                  paddingBottom: "8px",
+                  borderBottom: "2px solid #97b067",
+                }}
+              >
+                General
+              </h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      color: "var(--text-primary)",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    Week starts on
+                  </label>
                   <select
                     value={settings.weekStartsOn}
                     onChange={(e) => handleSettingChange("weekStartsOn", Number.parseInt(e.target.value))}
-                    className="form-input"
+                    style={{
+                      width: "100%",
+                      padding: "8px 12px",
+                      border: "1px solid var(--border-primary)",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      background: "var(--bg-primary)",
+                      color: "var(--text-primary)",
+                    }}
                   >
                     <option value={0}>Sunday</option>
                     <option value={1}>Monday</option>
                   </select>
                 </div>
 
-                <div className="settings-item">
-                  <label className="form-label">Time format</label>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      color: "var(--text-primary)",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    Time format
+                  </label>
                   <select
                     value={settings.timeFormat}
                     onChange={(e) => handleSettingChange("timeFormat", e.target.value)}
-                    className="form-input"
+                    style={{
+                      width: "100%",
+                      padding: "8px 12px",
+                      border: "1px solid var(--border-primary)",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      background: "var(--bg-primary)",
+                      color: "var(--text-primary)",
+                    }}
                   >
                     <option value="12">12-hour (AM/PM)</option>
                     <option value="24">24-hour</option>
                   </select>
                 </div>
 
-                <div className="settings-checkbox">
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    padding: "12px",
+                    background: "var(--bg-secondary)",
+                    borderRadius: "8px",
+                    border: "1px solid var(--border-primary)",
+                  }}
+                >
                   <input
                     type="checkbox"
                     id="notifications"
                     checked={settings.notifications}
                     onChange={(e) => handleSettingChange("notifications", e.target.checked)}
+                    style={{ width: "18px", height: "18px", accentColor: "#2f5249" }}
                   />
-                  <label htmlFor="notifications">Enable notifications</label>
+                  <label
+                    htmlFor="notifications"
+                    style={{
+                      fontSize: "14px",
+                      color: "var(--text-primary)",
+                      cursor: "pointer",
+                      fontWeight: "500",
+                    }}
+                  >
+                    Enable notifications
+                  </label>
                 </div>
               </div>
             </div>
 
             {/* Categories */}
-            <div className="settings-section">
-              <h3 className="settings-section-title">Categories</h3>
-              <div className="categories-section">
-                <div className="categories-list">
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <h3
+                style={{
+                  fontSize: "18px",
+                  fontWeight: "600",
+                  color: "var(--text-primary)",
+                  marginBottom: "8px",
+                  paddingBottom: "8px",
+                  borderBottom: "2px solid #97b067",
+                }}
+              >
+                Categories
+              </h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "12px",
+                    maxHeight: "200px",
+                    overflowY: "auto",
+                    padding: "16px",
+                    background: "var(--bg-secondary)",
+                    borderRadius: "8px",
+                    border: "1px solid var(--border-primary)",
+                  }}
+                >
                   {categories.map((category) => (
-                    <div key={category.id} className="category-display">
-                      <div className="category-color-dot" style={{ backgroundColor: category.color }} />
-                      <span className="category-name-display">{category.name}</span>
+                    <div
+                      key={category.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        padding: "8px 12px",
+                        background: "var(--bg-primary)",
+                        borderRadius: "6px",
+                        border: "1px solid var(--border-primary)",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "16px",
+                          height: "16px",
+                          borderRadius: "50%",
+                          backgroundColor: category.color,
+                          flexShrink: 0,
+                        }}
+                      />
+                      <span
+                        style={{
+                          flex: 1,
+                          fontSize: "14px",
+                          color: "var(--text-primary)",
+                          fontWeight: "500",
+                        }}
+                      >
+                        {category.name}
+                      </span>
                     </div>
                   ))}
                 </div>
 
-                <div className="add-category-form">
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    padding: "16px",
+                    background: "var(--bg-secondary)",
+                    borderRadius: "8px",
+                    border: "1px solid var(--border-primary)",
+                  }}
+                >
                   <input
                     type="text"
+                    placeholder="Category name"
                     value={newCategory.name}
                     onChange={(e) => setNewCategory((prev) => ({ ...prev, name: e.target.value }))}
-                    placeholder="Category name"
-                    className="add-category-input"
+                    style={{
+                      flex: 1,
+                      padding: "10px 12px",
+                      border: "1px solid var(--border-primary)",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      background: "var(--bg-primary)",
+                      color: "var(--text-primary)",
+                    }}
                   />
                   <input
                     type="color"
                     value={newCategory.color}
                     onChange={(e) => setNewCategory((prev) => ({ ...prev, color: e.target.value }))}
-                    className="add-category-color"
+                    style={{
+                      width: "44px",
+                      height: "44px",
+                      border: "1px solid var(--border-primary)",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      background: "var(--bg-primary)",
+                    }}
                   />
-                  <button onClick={handleAddCategory} className="add-category-button">
+                  <button
+                    onClick={handleAddCategory}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "10px 16px",
+                      background: "#2f5249",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      cursor: "pointer",
+                    }}
+                  >
                     <Plus />
                     Add
                   </button>
@@ -238,22 +450,51 @@ export default function SettingsModal() {
             </div>
 
             {/* Import/Export */}
-            <div className="settings-section">
-              <h3 className="settings-section-title">Import/Export</h3>
-              <div className="import-export-section">
-                <div className="import-export-buttons">
-                  <button onClick={handleExport} className="button button-secondary">
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <h3
+                style={{
+                  fontSize: "18px",
+                  fontWeight: "600",
+                  color: "var(--text-primary)",
+                  marginBottom: "8px",
+                  paddingBottom: "8px",
+                  borderBottom: "2px solid #97b067",
+                }}
+              >
+                Import/Export
+              </h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+                  <button
+                    onClick={handleExport}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "10px 16px",
+                      background: "var(--bg-tertiary)",
+                      color: "var(--text-secondary)",
+                      border: "1px solid var(--border-primary)",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      cursor: "pointer",
+                    }}
+                  >
                     <Download />
                     Export Calendar
                   </button>
-
-                  <label className="file-input-label">
-                    <Upload />
-                    Import Calendar
-                    <input type="file" accept=".ics" onChange={handleImport} className="file-input-hidden" />
-                  </label>
                 </div>
-                <p className="import-export-description">
+                <p
+                  style={{
+                    fontSize: "14px",
+                    color: "var(--text-secondary)",
+                    padding: "12px",
+                    background: "var(--bg-secondary)",
+                    borderRadius: "6px",
+                    borderLeft: "4px solid #97b067",
+                  }}
+                >
                   Export your events to ICS format or import from other calendar applications.
                 </p>
               </div>

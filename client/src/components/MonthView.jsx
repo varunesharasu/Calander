@@ -2,7 +2,6 @@
 import { useCalendar } from "../context/CalendarContext"
 import { getMonthCalendarDays, formatDate, isToday, isSameDay } from "../utils/dateUtils"
 import { Plus } from "lucide-react"
-import "../styles/MonthView.css"
 
 export default function MonthView() {
   const { currentDate, selectedDate, events, categories, filterCategory, searchTerm, dispatch } = useCalendar()
@@ -55,12 +54,37 @@ export default function MonthView() {
   }
 
   return (
-    <div className="calendar-container">
-      <div className="calendar-card">
+    <div style={{ padding: "24px" }}>
+      <div
+        style={{
+          background: "var(--bg-primary)",
+          border: "1px solid var(--border-primary)",
+          borderRadius: "8px",
+          overflow: "hidden",
+          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+        }}
+      >
         {/* Week day headers */}
-        <div className="calendar-header">
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(7, 1fr)",
+            background: "var(--bg-secondary)",
+            borderBottom: "1px solid var(--border-primary)",
+          }}
+        >
           {weekDays.map((day) => (
-            <div key={day} className="calendar-header-day">
+            <div
+              key={day}
+              style={{
+                padding: "16px 8px",
+                textAlign: "center",
+                fontSize: "14px",
+                fontWeight: "600",
+                color: "var(--text-secondary)",
+                borderRight: "1px solid var(--border-primary)",
+              }}
+            >
               <div className="hidden md:block">{day}</div>
               <div className="md:hidden">{day.slice(0, 3)}</div>
             </div>
@@ -68,42 +92,130 @@ export default function MonthView() {
         </div>
 
         {/* Calendar days grid */}
-        <div className="calendar-grid">
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(7, 1fr)",
+          }}
+        >
           {calendarDays.map((date, index) => {
             const dayEvents = getEventsForDay(date)
             const isCurrentDay = isToday(date)
             const isSelected = isSameDay(date, selectedDate)
             const isOtherMonthDay = isOtherMonth(date)
 
+            const dayStyle = {
+              minHeight: "120px",
+              padding: "8px",
+              borderRight: "1px solid var(--border-primary)",
+              borderBottom: "1px solid var(--border-primary)",
+              cursor: "pointer",
+              background: "var(--bg-primary)",
+              position: "relative",
+            }
+
+            if (isOtherMonthDay) {
+              dayStyle.background = "var(--bg-secondary)"
+              dayStyle.color = "var(--text-tertiary)"
+            }
+
+            if (isCurrentDay) {
+              dayStyle.background = "var(--bg-secondary)"
+              dayStyle.borderLeft = "3px solid #2f5249"
+            }
+
+            if (isSelected) {
+              dayStyle.background = "var(--bg-tertiary)"
+              dayStyle.borderLeft = "3px solid #437059"
+            }
+
             return (
-              <div
-                key={index}
-                className={`
-                  calendar-day
-                  ${isOtherMonthDay ? "other-month" : ""}
-                  ${isCurrentDay ? "today" : ""}
-                  ${isSelected ? "selected" : ""}
-                `}
-                onClick={() => handleDayClick(date)}
-              >
+              <div key={index} style={dayStyle} onClick={() => handleDayClick(date)}>
                 {/* Day header */}
-                <div className="calendar-day-header">
-                  <div className="calendar-day-number">{date.getDate()}</div>
-                  <div className="calendar-day-actions">
-                    {dayEvents.length > 3 && <span className="day-event-count">+{dayEvents.length - 3}</span>}
-                    <button onClick={(e) => handleAddEvent(date, e)} className="add-event-button" title="Add event">
-                      <Plus />
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    marginBottom: "8px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      color: isCurrentDay ? "white" : "var(--text-primary)",
+                      background: isCurrentDay ? "#2f5249" : "transparent",
+                      width: isCurrentDay ? "24px" : "auto",
+                      height: isCurrentDay ? "24px" : "auto",
+                      borderRadius: isCurrentDay ? "50%" : "0",
+                      display: isCurrentDay ? "flex" : "block",
+                      alignItems: isCurrentDay ? "center" : "normal",
+                      justifyContent: isCurrentDay ? "center" : "normal",
+                      fontSize: isCurrentDay ? "12px" : "14px",
+                    }}
+                  >
+                    {date.getDate()}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "4px", opacity: 0 }}>
+                    {dayEvents.length > 3 && (
+                      <span
+                        style={{
+                          fontSize: "10px",
+                          background: "var(--border-primary)",
+                          color: "var(--text-secondary)",
+                          padding: "2px 6px",
+                          borderRadius: "10px",
+                        }}
+                      >
+                        +{dayEvents.length - 3}
+                      </span>
+                    )}
+                    <button
+                      onClick={(e) => handleAddEvent(date, e)}
+                      style={{
+                        width: "20px",
+                        height: "20px",
+                        background: "#2f5249",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                      title="Add event"
+                    >
+                      <Plus style={{ width: "12px", height: "12px" }} />
                     </button>
                   </div>
                 </div>
 
                 {/* Events */}
-                <div className="calendar-events">
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "2px",
+                    maxHeight: "80px",
+                    overflowY: "auto",
+                  }}
+                >
                   {dayEvents.slice(0, 3).map((event) => (
                     <div
                       key={event.id}
-                      className="calendar-event"
-                      style={{ backgroundColor: getCategoryColor(event.category) }}
+                      style={{
+                        fontSize: "11px",
+                        padding: "2px 6px",
+                        borderRadius: "3px",
+                        color: "white",
+                        cursor: "pointer",
+                        backgroundColor: getCategoryColor(event.category),
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
                       onClick={(e) => handleEventClick(event, e)}
                       title={`${event.title} - ${formatDate(event.date, "h:mm A")}`}
                     >

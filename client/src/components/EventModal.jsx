@@ -1,10 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, Calendar, Clock, Tag, MapPin, Users, Bell, Repeat, Trash2, Save, AlertTriangle } from "lucide-react"
+import { X, Calendar, Clock, Tag, MapPin, Bell, Trash2, Save } from "lucide-react"
 import { useCalendar } from "../context/CalendarContext"
 import { formatDate, getTimeSlots } from "../utils/dateUtils"
-import "../styles/EventModal.css"
 
 export default function EventModal() {
   const { showEventModal, selectedEvent, selectedDate, categories, dispatch, canDeleteEvent, isEventTimeInPast } =
@@ -22,6 +21,7 @@ export default function EventModal() {
     reminder: "15",
     recurring: "none",
     allDay: false,
+    priority: "medium",
   })
 
   const [errors, setErrors] = useState({})
@@ -41,6 +41,7 @@ export default function EventModal() {
         reminder: selectedEvent.reminder || "15",
         recurring: selectedEvent.recurring || "none",
         allDay: selectedEvent.allDay || false,
+        priority: selectedEvent.priority || "medium",
       })
     } else if (selectedDate) {
       setFormData((prev) => ({
@@ -65,23 +66,6 @@ export default function EventModal() {
 
     if (!formData.allDay && formData.time >= formData.endTime) {
       newErrors.endTime = "End time must be after start time"
-    }
-
-    // Check if event time is in the past
-    if (!formData.allDay && isEventTimeInPast(formData.date, formData.time)) {
-      newErrors.time = "Cannot create events in the past"
-    }
-
-    // For all-day events, check if the date is in the past
-    if (formData.allDay) {
-      const eventDate = new Date(formData.date)
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      eventDate.setHours(0, 0, 0, 0)
-
-      if (eventDate < today) {
-        newErrors.date = "Cannot create events in the past"
-      }
     }
 
     setErrors(newErrors)
@@ -115,6 +99,7 @@ export default function EventModal() {
       reminder: formData.reminder,
       recurring: formData.recurring,
       allDay: formData.allDay,
+      priority: formData.priority,
       duration: formData.allDay ? null : (endDate - eventDate) / (1000 * 60),
     }
 
@@ -130,11 +115,6 @@ export default function EventModal() {
 
   const handleDelete = async () => {
     if (!selectedEvent) return
-
-    if (!canDeleteEvent(selectedEvent)) {
-      alert("Cannot delete event within 30 minutes of start time!")
-      return
-    }
 
     if (window.confirm("Are you sure you want to delete this event?")) {
       setIsLoading(true)
@@ -160,123 +140,239 @@ export default function EventModal() {
       reminder: "15",
       recurring: "none",
       allDay: false,
+      priority: "medium",
     })
     setErrors({})
   }
 
-  const getTimeUntilEvent = () => {
-    if (!selectedEvent) return null
-    const now = new Date()
-    const eventTime = new Date(selectedEvent.date)
-    const timeDifference = eventTime.getTime() - now.getTime()
-    const minutesDifference = Math.floor(timeDifference / (1000 * 60))
-
-    if (minutesDifference <= 30 && minutesDifference > 0) {
-      return minutesDifference
-    }
-    return null
-  }
-
-  const minutesUntilEvent = getTimeUntilEvent()
-
   if (!showEventModal) return null
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0, 0, 0, 0.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 50,
+        padding: "16px",
+      }}
+      onClick={handleClose}
+    >
+      <div
+        style={{
+          background: "var(--bg-primary)",
+          borderRadius: "12px",
+          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.15)",
+          maxWidth: "600px",
+          width: "100%",
+          maxHeight: "90vh",
+          overflowY: "auto",
+          border: "1px solid var(--border-primary)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="modal-header">
-          <div className="modal-header-content">
-            <div className="modal-header-info">
-              <div className="modal-icon">
+        <div
+          style={{
+            padding: "24px 24px 0 24px",
+            borderBottom: "1px solid var(--border-primary)",
+            marginBottom: "24px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingBottom: "24px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  background: "linear-gradient(135deg, #2f5249, #437059)",
+                  borderRadius: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "white",
+                }}
+              >
                 <Calendar />
               </div>
-              <div className="modal-title-section">
-                <h2>{selectedEvent ? "Edit Event" : "Create New Event"}</h2>
-                <p>Fill in the details for your event</p>
+              <div>
+                <h2
+                  style={{
+                    fontSize: "20px",
+                    fontWeight: "600",
+                    color: "var(--text-primary)",
+                    margin: "0 0 4px 0",
+                  }}
+                >
+                  {selectedEvent ? "Edit Event" : "Create New Event"}
+                </h2>
+                <p style={{ fontSize: "14px", color: "var(--text-secondary)", margin: 0 }}>
+                  Fill in the details for your event
+                </p>
               </div>
             </div>
-            <button onClick={handleClose} className="modal-close">
+            <button
+              onClick={handleClose}
+              style={{
+                width: "32px",
+                height: "32px",
+                border: "none",
+                background: "var(--bg-tertiary)",
+                borderRadius: "6px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--text-secondary)",
+              }}
+            >
               <X />
             </button>
           </div>
         </div>
 
-        {/* Delete Warning */}
-        {selectedEvent && minutesUntilEvent !== null && (
-          <div className="delete-warning">
-            <AlertTriangle />
-            <span>Cannot delete event within 30 minutes of start time ({minutesUntilEvent} minutes remaining)</span>
-          </div>
-        )}
-
-        {/* Past Time Warning */}
-        {(errors.time || errors.date) &&
-          (errors.time === "Cannot create events in the past" ||
-            errors.date === "Cannot create events in the past") && (
-            <div className="past-time-warning">
-              <AlertTriangle />
-              <span>Cannot create events in the past. Please select a future date and time.</span>
-            </div>
-          )}
-
         {/* Form */}
-        <div className="modal-body">
-          <form onSubmit={handleSubmit} className="modal-form">
+        <div style={{ padding: "0 24px 24px 24px" }}>
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
             {/* Title */}
-            <div className="form-group">
-              <label className="form-label">Event Title *</label>
+            <div style={{ marginBottom: "20px" }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  color: "var(--text-primary)",
+                  marginBottom: "6px",
+                }}
+              >
+                Event Title *
+              </label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-                className={`form-input ${errors.title ? "error" : ""}`}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: `1px solid ${errors.title ? "#ef4444" : "var(--border-primary)"}`,
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  background: "var(--bg-primary)",
+                  color: "var(--text-primary)",
+                }}
                 placeholder="Enter event title..."
               />
-              {errors.title && <p className="error-message">{errors.title}</p>}
+              {errors.title && <p style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px" }}>{errors.title}</p>}
             </div>
 
             {/* Description */}
-            <div className="form-group">
-              <label className="form-label-with-icon">
-                <Tag />
+            <div style={{ marginBottom: "20px" }}>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  color: "var(--text-primary)",
+                  marginBottom: "6px",
+                }}
+              >
+                <Tag style={{ width: "16px", height: "16px", color: "var(--text-secondary)" }} />
                 Description
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-                className="form-input form-textarea"
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid var(--border-primary)",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  background: "var(--bg-primary)",
+                  color: "var(--text-primary)",
+                  resize: "vertical",
+                  minHeight: "80px",
+                }}
                 placeholder="Add event description..."
               />
             </div>
 
             {/* Date and All Day */}
-            <div className="form-group-inline">
-              <div className="form-group">
-                <label className="form-label-with-icon">
-                  <Calendar />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div style={{ marginBottom: "20px" }}>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "var(--text-primary)",
+                    marginBottom: "6px",
+                  }}
+                >
+                  <Calendar style={{ width: "16px", height: "16px", color: "var(--text-secondary)" }} />
                   Date *
                 </label>
                 <input
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData((prev) => ({ ...prev, date: e.target.value }))}
-                  className={`form-input ${errors.date ? "error" : ""}`}
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    border: `1px solid ${errors.date ? "#ef4444" : "var(--border-primary)"}`,
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    background: "var(--bg-primary)",
+                    color: "var(--text-primary)",
+                  }}
                 />
-                {errors.date && <p className="error-message">{errors.date}</p>}
+                {errors.date && <p style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px" }}>{errors.date}</p>}
               </div>
 
-              <div className="form-group">
-                <label className="form-label">All Day Event</label>
-                <div className="checkbox-group">
-                  <label className="checkbox-label">
+              <div style={{ marginBottom: "20px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "var(--text-primary)",
+                    marginBottom: "6px",
+                  }}
+                >
+                  All Day Event
+                </label>
+                <div style={{ display: "flex", alignItems: "center", height: "48px" }}>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      cursor: "pointer",
+                      gap: "8px",
+                    }}
+                  >
                     <input
                       type="checkbox"
                       checked={formData.allDay}
                       onChange={(e) => setFormData((prev) => ({ ...prev, allDay: e.target.checked }))}
-                      className="checkbox-input"
+                      style={{ width: "16px", height: "16px", accentColor: "#2f5249" }}
                     />
-                    <span className="checkbox-text">This is an all-day event</span>
+                    <span style={{ fontSize: "14px", color: "var(--text-primary)", fontWeight: "500" }}>
+                      This is an all-day event
+                    </span>
                   </label>
                 </div>
               </div>
@@ -284,16 +380,34 @@ export default function EventModal() {
 
             {/* Time Selection */}
             {!formData.allDay && (
-              <div className="form-group-inline">
-                <div className="form-group">
-                  <label className="form-label-with-icon">
-                    <Clock />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div style={{ marginBottom: "20px" }}>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      color: "var(--text-primary)",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    <Clock style={{ width: "16px", height: "16px", color: "var(--text-secondary)" }} />
                     Start Time
                   </label>
                   <select
                     value={formData.time}
                     onChange={(e) => setFormData((prev) => ({ ...prev, time: e.target.value }))}
-                    className={`form-input ${errors.time ? "error" : ""}`}
+                    style={{
+                      width: "100%",
+                      padding: "8px 12px",
+                      border: `1px solid ${errors.time ? "#ef4444" : "var(--border-primary)"}`,
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      background: "var(--bg-primary)",
+                      color: "var(--text-primary)",
+                    }}
                   >
                     {timeSlots.map((slot) => (
                       <option key={slot.time} value={slot.time}>
@@ -301,15 +415,33 @@ export default function EventModal() {
                       </option>
                     ))}
                   </select>
-                  {errors.time && <p className="error-message">{errors.time}</p>}
+                  {errors.time && <p style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px" }}>{errors.time}</p>}
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">End Time</label>
+                <div style={{ marginBottom: "20px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      color: "var(--text-primary)",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    End Time
+                  </label>
                   <select
                     value={formData.endTime}
                     onChange={(e) => setFormData((prev) => ({ ...prev, endTime: e.target.value }))}
-                    className={`form-input ${errors.endTime ? "error" : ""}`}
+                    style={{
+                      width: "100%",
+                      padding: "8px 12px",
+                      border: `1px solid ${errors.endTime ? "#ef4444" : "var(--border-primary)"}`,
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      background: "var(--bg-primary)",
+                      color: "var(--text-primary)",
+                    }}
                   >
                     {timeSlots.map((slot) => (
                       <option key={slot.time} value={slot.time}>
@@ -317,22 +449,42 @@ export default function EventModal() {
                       </option>
                     ))}
                   </select>
-                  {errors.endTime && <p className="error-message">{errors.endTime}</p>}
+                  {errors.endTime && (
+                    <p style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px" }}>{errors.endTime}</p>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* Category and Reminder */}
-            <div className="form-group-inline">
-              <div className="form-group">
-                <label className="form-label-with-icon">
-                  <Tag />
+            {/* Category and Priority */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div style={{ marginBottom: "20px" }}>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "var(--text-primary)",
+                    marginBottom: "6px",
+                  }}
+                >
+                  <Tag style={{ width: "16px", height: "16px", color: "var(--text-secondary)" }} />
                   Category
                 </label>
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
-                  className="form-input"
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    border: "1px solid var(--border-primary)",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    background: "var(--bg-primary)",
+                    color: "var(--text-primary)",
+                  }}
                 >
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
@@ -342,15 +494,99 @@ export default function EventModal() {
                 </select>
               </div>
 
-              <div className="form-group">
-                <label className="form-label-with-icon">
-                  <Bell />
+              <div style={{ marginBottom: "20px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "var(--text-primary)",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Priority
+                </label>
+                <select
+                  value={formData.priority}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, priority: e.target.value }))}
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    border: "1px solid var(--border-primary)",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    background: "var(--bg-primary)",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Location and Reminder */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div style={{ marginBottom: "20px" }}>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "var(--text-primary)",
+                    marginBottom: "6px",
+                  }}
+                >
+                  <MapPin style={{ width: "16px", height: "16px", color: "var(--text-secondary)" }} />
+                  Location
+                </label>
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    border: "1px solid var(--border-primary)",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    background: "var(--bg-primary)",
+                    color: "var(--text-primary)",
+                  }}
+                  placeholder="Enter location..."
+                />
+              </div>
+
+              <div style={{ marginBottom: "20px" }}>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "var(--text-primary)",
+                    marginBottom: "6px",
+                  }}
+                >
+                  <Bell style={{ width: "16px", height: "16px", color: "var(--text-secondary)" }} />
                   Reminder
                 </label>
                 <select
                   value={formData.reminder}
                   onChange={(e) => setFormData((prev) => ({ ...prev, reminder: e.target.value }))}
-                  className="form-input"
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    border: "1px solid var(--border-primary)",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    background: "var(--bg-primary)",
+                    color: "var(--text-primary)",
+                  }}
                 >
                   <option value="none">No reminder</option>
                   <option value="5">5 minutes before</option>
@@ -362,93 +598,92 @@ export default function EventModal() {
               </div>
             </div>
 
-            {/* Location and Attendees */}
-            <div className="form-group-inline">
-              <div className="form-group">
-                <label className="form-label-with-icon">
-                  <MapPin />
-                  Location
-                </label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
-                  className="form-input"
-                  placeholder="Enter location..."
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label-with-icon">
-                  <Users />
-                  Attendees
-                </label>
-                <input
-                  type="text"
-                  value={formData.attendees}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, attendees: e.target.value }))}
-                  className="form-input"
-                  placeholder="Comma-separated emails..."
-                />
-              </div>
-            </div>
-
-            {/* Recurring */}
-            <div className="form-group">
-              <label className="form-label-with-icon">
-                <Repeat />
-                Recurring
-              </label>
-              <select
-                value={formData.recurring}
-                onChange={(e) => setFormData((prev) => ({ ...prev, recurring: e.target.value }))}
-                className="form-input"
-              >
-                <option value="none">Does not repeat</option>
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-                <option value="yearly">Yearly</option>
-              </select>
-            </div>
-
             {/* Action Buttons */}
-            <div className="form-actions">
-              <div className="form-actions-left">
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingTop: "24px",
+                borderTop: "1px solid var(--border-primary)",
+                marginTop: "24px",
+              }}
+            >
+              <div style={{ display: "flex" }}>
                 {selectedEvent && (
                   <button
                     type="button"
                     onClick={handleDelete}
-                    disabled={isLoading || (selectedEvent && !canDeleteEvent(selectedEvent))}
-                    className={`button button-danger ${isLoading || (selectedEvent && !canDeleteEvent(selectedEvent)) ? "button-loading" : ""}`}
-                    title={
-                      selectedEvent && !canDeleteEvent(selectedEvent)
-                        ? "Cannot delete event within 30 minutes"
-                        : "Delete event"
-                    }
+                    disabled={isLoading}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "8px 16px",
+                      background: "#ef4444",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      cursor: isLoading ? "not-allowed" : "pointer",
+                      opacity: isLoading ? 0.7 : 1,
+                    }}
                   >
                     <Trash2 />
                     Delete Event
                   </button>
                 )}
               </div>
-              <div className="form-actions-right">
+              <div style={{ display: "flex", gap: "12px" }}>
                 <button
                   type="button"
                   onClick={handleClose}
                   disabled={isLoading}
-                  className={`button button-secondary ${isLoading ? "button-loading" : ""}`}
+                  style={{
+                    padding: "8px 16px",
+                    background: "var(--bg-tertiary)",
+                    color: "var(--text-secondary)",
+                    border: "1px solid var(--border-primary)",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    cursor: isLoading ? "not-allowed" : "pointer",
+                    opacity: isLoading ? 0.7 : 1,
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className={`button button-primary ${isLoading ? "button-loading" : ""}`}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "8px 16px",
+                    background: "#2f5249",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    cursor: isLoading ? "not-allowed" : "pointer",
+                    opacity: isLoading ? 0.7 : 1,
+                  }}
                 >
                   {isLoading ? (
                     <>
-                      <div className="loading-spinner" />
+                      <div
+                        style={{
+                          width: "16px",
+                          height: "16px",
+                          border: "2px solid rgba(255, 255, 255, 0.3)",
+                          borderTop: "2px solid white",
+                          borderRadius: "50%",
+                          animation: "spin 1s linear infinite",
+                        }}
+                      />
                       Saving...
                     </>
                   ) : (

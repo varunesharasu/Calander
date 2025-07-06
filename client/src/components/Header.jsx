@@ -1,9 +1,8 @@
 "use client"
-import { Calendar, ChevronLeft, ChevronRight, Plus, Search, Settings, Bell } from "lucide-react"
+import { Calendar, ChevronLeft, ChevronRight, Plus, Search, Settings, Bell, Upload } from "lucide-react"
 import { useCalendar } from "../context/CalendarContext"
 import { formatDate, addMonths, addWeeks, addDays } from "../utils/dateUtils"
 import { useState, useEffect } from "react"
-import "../styles/Header.css"
 
 export default function Header() {
   const { view, currentDate, searchTerm, dispatch, notifications } = useCalendar()
@@ -66,6 +65,8 @@ export default function Header() {
         return `Week of ${formatDate(currentDate, "MMM D, YYYY")}`
       case "day":
         return formatDate(currentDate, "dddd, MMMM D, YYYY")
+      case "agenda":
+        return "Agenda View"
       default:
         return formatDate(currentDate, "MMMM YYYY")
     }
@@ -78,48 +79,147 @@ export default function Header() {
   }
 
   return (
-    <div className="header-content">
-      <div className="header-left">
-        <div className="header-logo">
-          <div className="header-logo-icon">
+    <div
+      style={{
+        padding: "16px 24px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "24px",
+        flexWrap: "wrap",
+        background: "var(--bg-primary)",
+        borderBottom: "1px solid var(--border-primary)",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: "24px", flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
+          <div
+            style={{
+              width: "40px",
+              height: "40px",
+              background: "linear-gradient(135deg, #2f5249, #437059)",
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+            }}
+          >
             <Calendar />
           </div>
-          <div className="header-logo-text">
-            <h1>ProCalendar</h1>
-            <p>Professional Calendar Suite</p>
+          <div>
+            <h1 style={{ fontSize: "20px", fontWeight: "700", color: "var(--text-primary)", margin: 0 }}>
+              ProCalendar
+            </h1>
+            <p style={{ fontSize: "12px", color: "var(--text-secondary)", margin: 0 }}>Professional Calendar Suite</p>
           </div>
         </div>
 
-        <div className="header-nav">
-          <button onClick={handleToday}>Today</button>
-          <button className="nav-button" onClick={handlePrevious}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <button
+            onClick={handleToday}
+            style={{
+              padding: "8px 16px",
+              border: "1px solid var(--border-primary)",
+              background: "var(--bg-primary)",
+              color: "var(--text-secondary)",
+              borderRadius: "6px",
+              fontSize: "14px",
+              fontWeight: "500",
+              cursor: "pointer",
+            }}
+          >
+            Today
+          </button>
+          <button
+            onClick={handlePrevious}
+            style={{
+              padding: "8px",
+              border: "1px solid var(--border-primary)",
+              background: "var(--bg-primary)",
+              borderRadius: "6px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <ChevronLeft />
           </button>
-          <button className="nav-button" onClick={handleNext}>
+          <button
+            onClick={handleNext}
+            style={{
+              padding: "8px",
+              border: "1px solid var(--border-primary)",
+              background: "var(--bg-primary)",
+              borderRadius: "6px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <ChevronRight />
           </button>
-          <div className="header-title">{getDateTitle()}</div>
+          <div style={{ fontSize: "18px", fontWeight: "600", color: "var(--text-primary)", marginLeft: "12px" }}>
+            {getDateTitle()}
+          </div>
         </div>
       </div>
 
-      <div className="header-right">
-        <div className="search-container">
-          <Search className="search-icon" />
+      <div style={{ display: "flex", alignItems: "center", gap: "16px", flexShrink: 0 }}>
+        <div style={{ position: "relative" }}>
+          <Search
+            style={{
+              position: "absolute",
+              left: "12px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "var(--text-tertiary)",
+              width: "16px",
+              height: "16px",
+            }}
+          />
           <input
             type="text"
             placeholder="Search events..."
             value={searchTerm}
             onChange={(e) => dispatch({ type: "SET_SEARCH_TERM", payload: e.target.value })}
-            className="search-input"
+            style={{
+              width: "300px",
+              padding: "8px 12px 8px 36px",
+              border: "1px solid var(--border-primary)",
+              borderRadius: "6px",
+              fontSize: "14px",
+              background: "var(--bg-primary)",
+              color: "var(--text-primary)",
+            }}
           />
         </div>
 
-        <div className="view-toggle">
-          {["month", "week", "day"].map((viewType) => (
+        <div
+          style={{
+            display: "flex",
+            background: "var(--bg-tertiary)",
+            borderRadius: "6px",
+            padding: "2px",
+          }}
+        >
+          {["month", "week", "day", "agenda"].map((viewType) => (
             <button
               key={viewType}
               onClick={() => dispatch({ type: "SET_VIEW", payload: viewType })}
-              className={view === viewType ? "active" : ""}
+              style={{
+                padding: "6px 12px",
+                border: "none",
+                background: view === viewType ? "var(--bg-primary)" : "transparent",
+                color: view === viewType ? "var(--text-primary)" : "var(--text-secondary)",
+                fontSize: "14px",
+                fontWeight: "500",
+                borderRadius: "4px",
+                cursor: "pointer",
+                boxShadow: view === viewType ? "0 1px 2px rgba(0, 0, 0, 0.1)" : "none",
+              }}
             >
               {viewType.charAt(0).toUpperCase() + viewType.slice(1)}
             </button>
@@ -128,21 +228,93 @@ export default function Header() {
 
         <button
           onClick={requestNotificationPermission}
-          className="nav-button"
+          style={{
+            padding: "8px",
+            border: "1px solid var(--border-primary)",
+            background: "var(--bg-primary)",
+            borderRadius: "6px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative",
+          }}
           title="Enable notifications"
-          style={{ position: "relative" }}
         >
           <Bell />
-          {notifications.length > 0 && <span className="notification-badge">{notifications.length}</span>}
+          {notifications.length > 0 && (
+            <span
+              style={{
+                position: "absolute",
+                top: "-4px",
+                right: "-4px",
+                background: "#ef4444",
+                color: "white",
+                fontSize: "10px",
+                borderRadius: "50%",
+                width: "16px",
+                height: "16px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {notifications.length}
+            </span>
+          )}
         </button>
 
-        <button onClick={() => dispatch({ type: "TOGGLE_EVENT_MODAL" })} className="create-button">
+        <button
+          onClick={() => dispatch({ type: "TOGGLE_EVENT_MODAL" })}
+          style={{
+            background: "#2f5249",
+            color: "white",
+            border: "none",
+            padding: "8px 16px",
+            borderRadius: "6px",
+            fontSize: "14px",
+            fontWeight: "500",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+          }}
+        >
           <Plus />
           Create Event
         </button>
 
-        <button onClick={() => dispatch({ type: "TOGGLE_SETTINGS_MODAL" })} className="nav-button">
+        <button
+          onClick={() => dispatch({ type: "TOGGLE_SETTINGS_MODAL" })}
+          style={{
+            padding: "8px",
+            border: "1px solid var(--border-primary)",
+            background: "var(--bg-primary)",
+            borderRadius: "6px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           <Settings />
+        </button>
+
+        <button
+          onClick={() => dispatch({ type: "TOGGLE_IMPORT_MODAL" })}
+          style={{
+            padding: "8px",
+            border: "1px solid var(--border-primary)",
+            background: "var(--bg-primary)",
+            borderRadius: "6px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          title="Import/Export"
+        >
+          <Upload />
         </button>
       </div>
     </div>
