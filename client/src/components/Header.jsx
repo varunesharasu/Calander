@@ -180,7 +180,7 @@ export default function Header() {
               height: "16px",
             }}
           />
-          <input
+          {/* <input
             type="text"
             placeholder="Search events..."
             value={searchTerm}
@@ -194,7 +194,7 @@ export default function Header() {
               background: "var(--bg-primary)",
               color: "var(--text-primary)",
             }}
-          />
+          /> */}
         </div>
 
         <div
