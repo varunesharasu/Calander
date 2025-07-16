@@ -250,3 +250,7 @@
     flex-direction: column;
   }
 }
+
+.category-name:hover {
+  text-decoration: underline;
+}
