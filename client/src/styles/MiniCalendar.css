@@ -149,3 +149,9 @@
   color: var(--color-primary-dark);
   border-color: var(--color-primary-light);
 }
+
+.today-btn:disabled {
+  background: var(--bg-secondary);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
