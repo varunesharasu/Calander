@@ -17,7 +17,6 @@ import ImportModal from "./components/ImportModal"
 
 import "./styles/global.css"
 import "./styles/App.css"
-// import "./styles/QuickActions.css"
 import "./styles/EventHistory.css"
 import "./styles/BulkActions.css"
 import "./styles/AdvancedSearch.css"
