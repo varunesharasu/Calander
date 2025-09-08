@@ -27,7 +27,6 @@ import "./styles/ImportModal.css"
 function CalendarApp() {
   const { view, isLoading } = useCalendar()
 
-  // Request notification permission on app load
   useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission()
