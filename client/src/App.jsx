@@ -66,7 +66,6 @@ function CalendarApp() {
         <div className="app-sidebar">
           <Sidebar />
           <div className="sidebar-bottom">
-            {/* <EventHistory /> */}
           </div>
         </div>
         <div className="app-main">
