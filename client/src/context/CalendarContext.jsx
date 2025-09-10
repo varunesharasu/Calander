@@ -422,7 +422,6 @@ export function CalendarProvider({ children }) {
           dispatch({ type: "UPDATE_SETTINGS", payload: savedSettings })
         }
 
-        // Load categories
         const savedCategories = storageUtils.load(STORAGE_KEYS.CATEGORIES)
         if (savedCategories && Array.isArray(savedCategories)) {
           dispatch({ type: "SET_CATEGORIES", payload: savedCategories })
