@@ -418,7 +418,6 @@ export function CalendarProvider({ children }) {
           dispatch({ type: "SET_EVENTS", payload: savedEvents })
         }
 
-        // Load settings
         const savedSettings = storageUtils.load(STORAGE_KEYS.SETTINGS)
         if (savedSettings) {
           dispatch({ type: "UPDATE_SETTINGS", payload: savedSettings })
