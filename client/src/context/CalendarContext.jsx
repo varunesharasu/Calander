@@ -527,7 +527,6 @@ export function CalendarProvider({ children }) {
     }
   }, [state.settings.theme])
 
-  // Enhanced notification system with reminders
   useEffect(() => {
     if (!state.settings.notifications) return
 
