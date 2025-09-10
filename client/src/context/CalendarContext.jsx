@@ -412,7 +412,6 @@ export function CalendarProvider({ children }) {
       dispatch({ type: "SET_LOADING", payload: true })
 
       try {
-        // Load events
         const savedEvents = storageUtils.load(STORAGE_KEYS.EVENTS)
         if (savedEvents && Array.isArray(savedEvents)) {
           dispatch({ type: "SET_EVENTS", payload: savedEvents })
