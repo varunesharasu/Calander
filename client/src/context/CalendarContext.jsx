@@ -427,7 +427,6 @@ export function CalendarProvider({ children }) {
           dispatch({ type: "SET_CATEGORIES", payload: savedCategories })
         }
 
-        // Load templates
         const savedTemplates = storageUtils.load(STORAGE_KEYS.TEMPLATES)
         if (savedTemplates && Array.isArray(savedTemplates)) {
           dispatch({ type: "SET_TEMPLATES", payload: savedTemplates })
