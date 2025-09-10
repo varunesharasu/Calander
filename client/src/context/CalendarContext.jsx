@@ -546,7 +546,6 @@ export function CalendarProvider({ children }) {
     return () => clearInterval(interval)
   }, [state.events, state.settings.notifications])
 
-  // Utility functions
   const showNotification = (event) => {
     if ("Notification" in window && Notification.permission === "granted") {
       new Notification(`Upcoming Event: ${event.title}`, {
