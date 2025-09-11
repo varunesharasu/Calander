@@ -160,7 +160,6 @@ function calendarReducer(state, action) {
         newEvents.push(eventToAdd)
       }
 
-      // Add to history
       const newHistory = [
         ...state.eventHistory,
         {
