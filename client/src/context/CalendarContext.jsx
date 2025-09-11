@@ -406,7 +406,7 @@ function calendarReducer(state, action) {
 export function CalendarProvider({ children }) {
   const [state, dispatch] = useReducer(calendarReducer, initialState)
 
-  // Load data from localStorage on mount
+
   useEffect(() => {
     const loadData = async () => {
       dispatch({ type: "SET_LOADING", payload: true })
