@@ -395,7 +395,7 @@ function calendarReducer(state, action) {
     case "RESET_CALENDAR":
       return {
         ...initialState,
-        settings: state.settings, // Keep user settings
+        settings: state.settings, 
       }
 
     default:
